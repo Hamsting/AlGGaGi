@@ -1,12 +1,14 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-[System.Serializable]
+﻿[System.Serializable]
 public struct Faction
 {
-	bool isPlayer;
-	int order;
+	/// <summary>
+	/// 자신의 캐릭터일 경우 true. 상대일 경우 false.
+	/// </summary>
+	public bool isPlayer;
+	/// <summary>
+	/// 캐릭터의 배치 순서.
+	/// </summary>
+	public int order;
 
 
 

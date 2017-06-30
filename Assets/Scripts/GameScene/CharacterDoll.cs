@@ -55,11 +55,25 @@ public class CharacterDoll : MonoBehaviour
 
 	public void Tick()
 	{
-
+		center = this.transform.TransformPoint(col.offset);
 	}
 
-	public void OnMouseDown()
+	public void OnMouseUp()
 	{
-		GameManager.Instance.SelectDoll(this);
+		if (GameManager.Instance.myTurn && faction.isPlayer && !DollController.Instance.attacking)
+		{
+			Debug.Log("OnMouseUp : " + this.ToString());
+			if (GameManager.Instance.IsSelectingDoll())
+				GameManager.Instance.DeselectDoll();
+			GameManager.Instance.SelectDoll(this);
+		}
+	}
+
+	public void OnCollisionEnter2D(Collision2D col)
+	{
+		Vector3 posStart = this.transform.position;
+		Vector3 n = rb.velocity.normalized;
+		Vector3 posEnd = posStart + n;
+		this.transform.rotation = Quaternion.Euler(0, 0, -Mathf.Atan2(posEnd.x - posStart.x, posEnd.y - posStart.y) * Mathf.Rad2Deg);
 	}
 }

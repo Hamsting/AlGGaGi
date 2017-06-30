@@ -17,7 +17,6 @@ public class GameManager : MonoBehaviour
 			return _instance;
 		}
 	}
-	public static readonly float BOARD_WIDTH = 0.493f;
 
 	[HideInInspector]
 	public List<CharacterDoll> dolls;
@@ -27,16 +26,20 @@ public class GameManager : MonoBehaviour
 	public List<CharacterDoll> enemyDoll;
 	[HideInInspector]
 	public CharacterDoll selectedDoll;
-	[HideInInspector]
+	//[HideInInspector]
 	public float timer = 40.0f;
 	[HideInInspector]
 	public bool placeMode = true;
 	[HideInInspector]
-	public bool canMove = true;
-	[HideInInspector]
 	public bool myTurn = true;
+	[HideInInspector]
+	public int turnCount = 0;
 
 	public GameObject characterBoard;
+
+	private Board board;
+	private PlaceMode place;
+	private UIManager u;
 
 
 
@@ -47,57 +50,63 @@ public class GameManager : MonoBehaviour
 
 	void Start()
 	{
+		// Temporary!!!
+		myTurn = (Random.Range(0, 2) == 1) ? true : false;
+
 		Input.multiTouchEnabled = false;
 
 		dolls = new List<CharacterDoll>();
 		playerDoll = new List<CharacterDoll>();
 		enemyDoll = new List<CharacterDoll>();
-		UIManager.Instance.Initialize();
-		StartPlaceMode();
-		UIManager.Instance.ShowCharacter();
+
+		board = Board.Instance;
+		board.Initialize();
+
+		PushAllDolls();
+
+        DollController.Instance.Initialize();
+
+		u = UIManager.Instance;
+		u.Initialize();
+
+		place = PlaceMode.Instance;
+		place.StartPlaceMode();
+
+		u.ShowCharacter();
 	}
 
 	void Update()
 	{
-		UIManager.Instance.Tick();
-
-		// 서버에서 처리할 필요가 있음.
+		for (int i = 0; i < dolls.Count; ++i)
+			dolls[i].Tick();
+		if (placeMode)
+			place.UpdatePlaceMode();
+		else
+			DollController.Instance.Tick();
+		u.Tick();
+		
 		if (timer > 0f)
 			timer -= Time.deltaTime;
+		if (timer <= 0f && !placeMode)
+			NextTurn();
 
-		if (selectedDoll != null)
-		{
-#if UNITY_ANDROID && !UNITY_EDITOR
-			if (Input.touchCount == 0)
-				DeselectDoll();
-			else
-			{
-				Vector2 touchPos = Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position);
-				float angle = Mathf.Atan2(touchPos.y - selectedDoll.center.y, touchPos.x - selectedDoll.center.x) * Mathf.Rad2Deg + 90.0f;
-				Quaternion q = Quaternion.Euler(0f, 0f, angle);
-				selectedDoll.transform.rotation = q;
-			}
-#else
-			if (Input.GetMouseButton(0) == false)
-				DeselectDoll();
-			else
-			{
-				Vector2 touchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-				float angle = Mathf.Atan2(touchPos.y - selectedDoll.center.y, touchPos.x - selectedDoll.center.x) * Mathf.Rad2Deg + 90.0f;
-				Quaternion q = Quaternion.Euler(0f, 0f, angle);
-				selectedDoll.transform.rotation = q;
-			}
-#endif
-		}
+		// Temporary!!!
+		if (Input.GetKeyDown(KeyCode.T))
+			NextTurn();
 	}
 
 	public void SelectDoll(CharacterDoll _doll)
 	{
 		selectedDoll = _doll;
+		selectedDoll.gameObject.layer = LayerMask.NameToLayer("SelectedDoll");
+		u.OpenActSelect(_doll);
+		Debug.Log("Select : " + selectedDoll.ToString());
 	}
 
 	public void DeselectDoll()
 	{
+		Debug.Log("Deselect : " + selectedDoll.ToString());
+		selectedDoll.gameObject.layer = LayerMask.NameToLayer("Doll");
 		selectedDoll = null;
 	}
 
@@ -106,45 +115,74 @@ public class GameManager : MonoBehaviour
 		return selectedDoll != null;
 	}
 
-	public Vector2 GetGridPosition(int _row, int _column)
-	{
-		int column = Mathf.Clamp(_column, 1, 9) - 5;
-		int row = Mathf.Clamp(_row, 1, 9) - 5;
-		float x = BOARD_WIDTH * column;
-		float y = BOARD_WIDTH * row;
-		return new Vector2(x, y);
-	}
-
-	private void StartPlaceMode()
-	{
-		placeMode = true;
-		for (int i = 0; i < 5; ++i)
-		{
-			Character cha = PlayerData.Instance.characters[i];
-            int id = cha.id;
-			Faction faction = new Faction(true, i);
-			CharacterDoll doll = CreateCharacterDoll(id);
-			doll.transform.localPosition = GetGridPosition(2, 2 * i + 1);
-			doll.faction = faction;
-			doll.Initialize(cha);
-			dolls.Add(doll);
-			playerDoll.Add(doll);
-		}
-	}
-
-	private void EndPlaceMode()
-	{
-		placeMode = false;
-
-	}
-
 	private CharacterDoll CreateCharacterDoll(int _id)
 	{
 		GameObject prefab = CharacterDB.Instance.GetCharacterDollPrefab(_id);
 		GameObject dupe = Instantiate(prefab, characterBoard.transform);
 		CharacterDoll doll = dupe.GetComponent<CharacterDoll>();
-		doll.transform.localPosition = GetGridPosition(1, 1);
+		doll.transform.localPosition = board.GetGridPosition(1, 1);
 		doll.faction = new Faction(false, 0);
 		return doll;
+	}
+
+	public CharacterDoll GetDoll(bool _isPlayer, int _order)
+	{
+		if (_isPlayer)
+			return playerDoll[_order];
+		else
+			return enemyDoll[_order];
+	}
+
+	private void PushAllDolls()
+	{
+		Vector2 hidePos = new Vector2(-999f, -999f);
+		for (int i = 0; i < 5; ++i)
+		{
+			Character cha = PlayerData.Instance.characters[i];
+			int id = cha.id;
+			Faction faction = new Faction(true, i);
+			CharacterDoll doll = CreateCharacterDoll(id);
+			doll.transform.localPosition = hidePos;
+			doll.faction = faction;
+			doll.Initialize(cha);
+			dolls.Add(doll);
+			playerDoll.Add(doll);
+			doll.gameObject.SetActive(false);
+		}
+		List<Character> ec = LoadEnemyCharacters();
+		for (int i = 0; i < 5; ++i)
+		{
+			Character cha = ec[i];
+			int id = cha.id;
+			Faction faction = new Faction(false, i);
+			CharacterDoll doll = CreateCharacterDoll(id);
+			doll.transform.localPosition = hidePos;
+			doll.faction = faction;
+			doll.Initialize(cha);
+			dolls.Add(doll);
+			enemyDoll.Add(doll);
+			doll.gameObject.SetActive(false);
+		}
+	}
+
+	private List<Character> LoadEnemyCharacters()
+	{
+		// Temporary!!!
+		List<Character> chas = new List<Character>();
+		chas.Add(CharacterDB.Instance.GetCharacter(0000));
+		chas.Add(CharacterDB.Instance.GetCharacter(0000));
+		chas.Add(CharacterDB.Instance.GetCharacter(0000));
+		chas.Add(CharacterDB.Instance.GetCharacter(0000));
+		chas.Add(CharacterDB.Instance.GetCharacter(0000));
+		return chas;
+	}
+
+	private void NextTurn()
+	{
+		++turnCount;
+		myTurn = !myTurn;
+		timer = 40f;
+		if (IsSelectingDoll())
+			DeselectDoll();
 	}
 }
