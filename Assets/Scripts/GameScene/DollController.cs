@@ -9,9 +9,13 @@ public class DollController : MonoBehaviour
 	private static readonly int PREVIEW_REFLECT		= 1;
 	private static readonly int PREVIEW_TARGETGO	= 2;
 	private static readonly int PREVIEW_CIRCLE		= 3;
-	private static readonly float ONE_GRID_FORCE	= 1280f;
-	private static readonly float MAX_DISTANCE = Board.BOARD_WIDTH * 5f;
+	private static readonly float MAX_DISTANCE		= Board.BOARD_WIDTH * 5f;
 	private static readonly float PREVIEW_Z			= -2f;
+	// CancleControl
+	// private static readonly float PREVIEW_CANCEL_Y	= 370f;
+	private static readonly float PREVIEW_CANCELDIS = 128f * 0.5f;
+	private static readonly Color32 CANCELBG_OFF	= new Color32(255, 255, 255, 100);
+	private static readonly Color32 CANCELBG_ON		= new Color32(255, 255, 255, 200);
 	private static DollController _instance;
 	public static DollController Instance
 	{
@@ -25,19 +29,30 @@ public class DollController : MonoBehaviour
 			return _instance;
 		}
 	}
+	public static readonly float ONE_GRID_FORCE = 1280f;
 
 	public bool attacking = false;
+	public int attackType = 0;
 
 	private LineRenderer[] lineRenderer;
 	private float powerScale = 0.0f;
 	private Vector2 firstTouched;
+	private Vector2 firstTouchedScrn;
+	private bool touchStarted = false;
 	private float previewMaterialSpeed = 0.01f;
+	private bool cancelAct = false;
+	private GameManager g;
+	private UIManager u;
 
 
 
 	/*
 	 * DollController
-	 * 
+	 * 1. 알이 선택되었으면 일반공격과 스킬을 고른다.
+	 * 2. 골랐다면 attacking이 treu로 바뀌며 알을 조종할 수 있게 된다.
+	 * 3. 알을 조종하였다면 attacking이 false로 바뀌고 턴을 상대에게 넘긴다.
+	 * 4. 취소하려면 조종하는 상태에서 화면 가장 위 취소선 이내로 드래그해야한다.
+	 * 5. 취소했을 경우 알의 선택을 해제한다.
 	 */
 
 	void Awake()
@@ -47,6 +62,9 @@ public class DollController : MonoBehaviour
 
 	public void Initialize()
 	{
+		g = GameManager.Instance;
+		u = UIManager.Instance;
+
 		lineRenderer = this.GetComponentsInChildren<LineRenderer>();
 		lineRenderer[PREVIEW_INCOMING].gameObject.SetActive(false);
 		lineRenderer[PREVIEW_REFLECT].gameObject.SetActive(false);
@@ -57,26 +75,36 @@ public class DollController : MonoBehaviour
 	
 	public void Tick()
 	{
-		if (GameManager.Instance.IsSelectingDoll())
+		if (g.IsSelectingDoll() && !g.gameStopped && attackType != 0)
 		{
 #if UNITY_ANDROID && !UNITY_EDITOR
 			if (Input.touchCount > 0)
 			{
 				Touch t = Input.GetTouch(0);
-				if (t.phase == TouchPhase.Ended)
+				if (touchStarted && t.phase == TouchPhase.Ended)
 					ShotDoll();
 				else
 				{
 					if (t.phase == TouchPhase.Began)
-						firstTouched = Camera.main.ScreenToWorldPoint(t.position);
+					{
+						// CancleControl
+						// u.OpenCancelControl();
+						firstTouchedScrn = t.position;
+						firstTouched = Camera.main.ScreenToWorldPoint(firstTouchedScrn);
+						u.SetDollControlAimPos(firstTouchedScrn);
+						u.SetDollControlAimActive(true);
+						touchStarted = true;
+					}
+					if (touchStarted)
+					{
+						Vector2 touchPos = Camera.main.ScreenToWorldPoint(t.position);
+						float angle = Mathf.Atan2(touchPos.y - firstTouched.y, touchPos.x - firstTouched.x) * Mathf.Rad2Deg + 90.0f;
+						float dis = Mathf.Clamp(Vector2.Distance(touchPos, firstTouched), 0f, MAX_DISTANCE);
+						Quaternion q = Quaternion.Euler(0f, 0f, angle);
+						g.selectedDoll.transform.rotation = q;
 
-					Vector2 touchPos = Camera.main.ScreenToWorldPoint(t.position);
-					float angle = Mathf.Atan2(touchPos.y - firstTouched.y, touchPos.x - firstTouched.x) * Mathf.Rad2Deg + 90.0f;
-					float dis = Mathf.Clamp(Vector2.Distance(touchPos, firstTouched), 0f, MAX_DISTANCE);
-					Quaternion q = Quaternion.Euler(0f, 0f, angle);
-					GameManager.Instance.selectedDoll.transform.rotation = q;
-
-					UpdatePreview(dis);
+						UpdatePreview(dis);
+					}
 				}
 			}
 			else
@@ -85,17 +113,27 @@ public class DollController : MonoBehaviour
 			if (Input.GetMouseButton(0))
 			{
 				if (Input.GetMouseButtonDown(0))
-					firstTouched = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+				{
+					// CancleControl
+					// u.OpenCancelControl();
+					firstTouchedScrn = Input.mousePosition;
+					firstTouched = Camera.main.ScreenToWorldPoint(firstTouchedScrn);
+					u.SetDollControlAimPos(firstTouchedScrn);
+					u.SetDollControlAimActive(true);
+					touchStarted = true;
+				}
+				if (touchStarted)
+				{
+					Vector2 touchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+					float angle = Mathf.Atan2(touchPos.y - firstTouched.y, touchPos.x - firstTouched.x) * Mathf.Rad2Deg + 90.0f;
+					float dis = Mathf.Clamp(Vector2.Distance(touchPos, firstTouched), 0f, MAX_DISTANCE);
+					Quaternion q = Quaternion.Euler(0f, 0f, angle);
+					g.selectedDoll.transform.rotation = q;
 
-				Vector2 touchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-				float angle = Mathf.Atan2(touchPos.y - firstTouched.y, touchPos.x - firstTouched.x) * Mathf.Rad2Deg + 90.0f;
-				float dis = Mathf.Clamp(Vector2.Distance(touchPos, firstTouched), 0f, MAX_DISTANCE);
-				Quaternion q = Quaternion.Euler(0f, 0f, angle);
-				GameManager.Instance.selectedDoll.transform.rotation = q;
-
-				UpdatePreview(dis);
+					UpdatePreview(dis);
+				}
 			}
-			else if (Input.GetMouseButtonUp(0))
+			else if (touchStarted && Input.GetMouseButtonUp(0))
 				ShotDoll();
 			else
 				DisableAllPreview();
@@ -103,11 +141,34 @@ public class DollController : MonoBehaviour
 		}
 		else
 			DisableAllPreview();
+		
+		if (attacking)
+		{
+			Vector2 touchPos = Vector2.zero;
+#if UNITY_ANDROID && !UNITY_EDITOR
+			touchPos = Input.GetTouch(0).position;
+#else
+			touchPos = Input.mousePosition;
+#endif
+			float dis = Vector2.Distance(firstTouchedScrn, touchPos);
+			if (dis <= PREVIEW_CANCELDIS * u.resolutionScale.y)
+			{
+				// CancleControl
+				// u.cancelControlBG.color = CANCELBG_ON;
+				cancelAct = true;
+			}
+			else
+			{
+				// CancleControl
+				// u.cancelControlBG.color = CANCELBG_OFF;
+				cancelAct = false;
+			}
+		}
 	}
 
 	private void UpdatePreview(float _touchDis)
 	{
-		CharacterDoll selectedDoll = GameManager.Instance.selectedDoll;
+		CharacterDoll selectedDoll = g.selectedDoll;
 
 		float bw = Board.BOARD_WIDTH;
 		float power = _touchDis * 2f;
@@ -116,7 +177,7 @@ public class DollController : MonoBehaviour
 		Transform trans = selectedDoll.transform;
 		int layerMask = -1 - (1 << LayerMask.NameToLayer("Background")) - (1 << LayerMask.NameToLayer("SelectedDoll"));
 		CircleCollider2D col = selectedDoll.GetComponent<CircleCollider2D>();
-		RaycastHit2D hit = Physics2D.CircleCast(trans.position, col.radius, trans.up, power, layerMask);
+		RaycastHit2D hit = Physics2D.CircleCast(trans.position, col.radius - 0.01f, trans.up, power, layerMask);
 
 		if (hit.collider != null)
 		{
@@ -193,10 +254,21 @@ public class DollController : MonoBehaviour
 
 	private void ShotDoll()
 	{
-		CharacterDoll selectedDoll = GameManager.Instance.selectedDoll;
+		touchStarted = false;
+		attacking = false;
+		// CancleControl
+		// u.CloseCancelControl();
+		u.SetDollControlAimActive(false);
+		if (cancelAct)
+		{
+			g.DeselectDoll();
+			return;
+		}
+		CharacterDoll selectedDoll = g.selectedDoll;
 		Rigidbody2D rb = selectedDoll.GetComponent<Rigidbody2D>();
 		rb.AddForce(selectedDoll.transform.up * (powerScale * ONE_GRID_FORCE));
-		attacking = false;
+		g.attacker = selectedDoll;
+		g.NextTurn();
 	}
 
 	private void DrawPreviewCircle(Vector2 _pos, float _radius)

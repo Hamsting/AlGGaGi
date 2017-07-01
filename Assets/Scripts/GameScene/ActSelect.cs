@@ -5,14 +5,16 @@ using UnityEngine.UI;
 
 public class ActSelect : MonoBehaviour
 {
-	private static readonly float MARGIN_X = 175f;
+	public static readonly float MARGIN_X = 175f;
 
 	public Button attack;
 	public Button skill;
+	public bool opened = false;
 
 	private RectTransform rtAttack;
 	private RectTransform rtSkill;
 	private IEnumerator currentAnimate;
+	private int attackType = 0;
 
 
 
@@ -29,6 +31,7 @@ public class ActSelect : MonoBehaviour
 
 	public void Open()
 	{
+		opened = true;
 		if (currentAnimate != null)
 			StopCoroutine(currentAnimate);
 		currentAnimate = OpenAnimate();
@@ -37,7 +40,8 @@ public class ActSelect : MonoBehaviour
 
 	public void Close()
 	{
-		if (currentAnimate != null)
+		opened = false;
+        if (currentAnimate != null)
 			StopCoroutine(currentAnimate);
 		currentAnimate = CloseAnimation();
 		StartCoroutine(currentAnimate);
@@ -74,6 +78,8 @@ public class ActSelect : MonoBehaviour
 		bool animate = true;
 		yield return null;
 
+		DollController.Instance.attackType = attackType;
+		attackType = 0;
 		while (animate)
 		{
 			rtAttack.localPosition = Vector2.Lerp(rtAttack.localPosition, Vector2.zero, 0.5f);
@@ -84,6 +90,13 @@ public class ActSelect : MonoBehaviour
 		}
 		rtAttack.localPosition = Vector2.zero;
 		rtSkill.localPosition = Vector2.zero;
+		this.gameObject.SetActive(false);
 		yield return null;
+	}
+
+	public void OnSelectAttackType(int _type)
+	{
+		attackType = _type;
+		Close();
 	}
 }

@@ -60,12 +60,13 @@ public class CharacterDoll : MonoBehaviour
 
 	public void OnMouseUp()
 	{
-		if (GameManager.Instance.myTurn && faction.isPlayer && !DollController.Instance.attacking)
+		GameManager g = GameManager.Instance;
+		if (g.myTurn && !g.placeMode && !g.gameStopped && 
+			faction.isPlayer && !DollController.Instance.attacking)
 		{
-			Debug.Log("OnMouseUp : " + this.ToString());
-			if (GameManager.Instance.IsSelectingDoll())
-				GameManager.Instance.DeselectDoll();
-			GameManager.Instance.SelectDoll(this);
+			if (g.IsSelectingDoll())
+				g.DeselectDoll();
+			g.SelectDoll(this);
 		}
 	}
 
@@ -75,5 +76,19 @@ public class CharacterDoll : MonoBehaviour
 		Vector3 n = rb.velocity.normalized;
 		Vector3 posEnd = posStart + n;
 		this.transform.rotation = Quaternion.Euler(0, 0, -Mathf.Atan2(posEnd.x - posStart.x, posEnd.y - posStart.y) * Mathf.Rad2Deg);
+
+		if (col.gameObject.layer == LayerMask.NameToLayer("Doll") &&
+			GameManager.Instance.attacker == this)
+		{
+			Vector2 minVelocity = col.contacts[0].point.normalized * DollController.ONE_GRID_FORCE * 2f;
+			col.rigidbody.AddForce(minVelocity);
+		}
+	}
+
+	public bool IsStopped()
+	{
+		if (rb.velocity == Vector2.zero)
+			return true;
+		return false;
 	}
 }

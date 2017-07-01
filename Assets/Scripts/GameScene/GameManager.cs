@@ -34,6 +34,10 @@ public class GameManager : MonoBehaviour
 	public bool myTurn = true;
 	[HideInInspector]
 	public int turnCount = 0;
+	[HideInInspector]
+	public bool gameStopped = false;
+	[HideInInspector]
+	public CharacterDoll attacker;
 
 	public GameObject characterBoard;
 
@@ -85,14 +89,29 @@ public class GameManager : MonoBehaviour
 			DollController.Instance.Tick();
 		u.Tick();
 		
-		if (timer > 0f)
+		if (timer > 0f && !gameStopped)
 			timer -= Time.deltaTime;
-		if (timer <= 0f && !placeMode)
+		if (timer <= 0f && !placeMode && !gameStopped)
 			NextTurn();
+
+		if (!myTurn && IsSelectingDoll())
+			DeselectDoll();
 
 		// Temporary!!!
 		if (Input.GetKeyDown(KeyCode.T))
 			NextTurn();
+		// Temporary!!!
+		if (!myTurn && timer <= 38f && !gameStopped)
+		{
+			int randIndex = Random.Range(0, 5);
+			float randPower = Random.Range(0.5f, 10f);
+			float randAngle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+			CharacterDoll ed = enemyDoll[randIndex];
+			Rigidbody2D rb = ed.GetComponent<Rigidbody2D>();
+			ed.transform.rotation = Quaternion.Euler(0f, 0f, randAngle);
+			rb.AddForce(ed.transform.up * (randPower * 1280f));
+			NextTurn();
+		}
 	}
 
 	public void SelectDoll(CharacterDoll _doll)
@@ -100,15 +119,14 @@ public class GameManager : MonoBehaviour
 		selectedDoll = _doll;
 		selectedDoll.gameObject.layer = LayerMask.NameToLayer("SelectedDoll");
 		u.OpenActSelect(_doll);
-		Debug.Log("Select : " + selectedDoll.ToString());
 	}
 
 	public void DeselectDoll()
 	{
-		Debug.Log("Deselect : " + selectedDoll.ToString());
 		selectedDoll.gameObject.layer = LayerMask.NameToLayer("Doll");
 		selectedDoll = null;
-	}
+		DollController.Instance.attackType = 0;
+    }
 
 	public bool IsSelectingDoll()
 	{
@@ -177,12 +195,49 @@ public class GameManager : MonoBehaviour
 		return chas;
 	}
 
-	private void NextTurn()
+	public void NextTurn()
 	{
-		++turnCount;
-		myTurn = !myTurn;
-		timer = 40f;
 		if (IsSelectingDoll())
 			DeselectDoll();
+		if (u.actSelect.opened)
+			u.CloseActSelect();
+		/*
+		 * CancelControl
+		if (u.cancelControlOpened)
+			u.CloseCancelControl();
+		*/
+
+		StartCoroutine(CheckAllDollStop());
+	}
+
+	private IEnumerator CheckAllDollStop()
+	{
+		gameStopped = true;
+		timer = 0f;
+		yield return null;
+
+		bool stopped = false;
+		int count = dolls.Count;
+        while (!stopped)
+		{
+			for (int i = 0; i <= count; ++i)
+			{
+				if (i == count)
+				{
+					stopped = true;
+					break;
+				}
+				else if (!dolls[i].IsStopped())
+					break;
+            }
+			yield return null;
+		}
+
+		myTurn = !myTurn;
+		++turnCount;
+		timer = 40f;
+		attacker = null;
+		gameStopped = false;
+		yield return null;
 	}
 }
