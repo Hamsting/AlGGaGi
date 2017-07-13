@@ -19,8 +19,8 @@ public class UIManager : MonoBehaviour
 		}
 	}
 
-	public Image[] playerPortrait;
-	public Image[] enemyPortrait;
+	public Portrait[] playerPortrait;
+	public Portrait[] enemyPortrait;
 	public Image dollControlAim;
 	public Image placeModeArrow;
 	public Image placeModeAim;
@@ -95,17 +95,25 @@ public class UIManager : MonoBehaviour
 		placeModeAim.gameObject.SetActive(false);
 	}
 
-	public void ShowCharacter()
+	public void ShowCharacters()
 	{
 		for (int i = 0; i < 5; ++i)
 		{
-			Character cha = GameManager.Instance.playerDoll[i].chaInfo;
-			playerPortrait[i].sprite = cha.portrait;
-		}
+			CharacterDoll doll = GameManager.Instance.playerDoll[i];
+			Portrait p = playerPortrait[i];
+            p.image.sprite = doll.chaInfo.portrait;
+			p.hpBar.Initialize();
+			p.doll = doll;
+			doll.portrait = p;
+        }
 		for (int i = 0; i < 5; ++i)
 		{
-			Character cha = GameManager.Instance.enemyDoll[i].chaInfo;
-			enemyPortrait[i].sprite = cha.portrait;
+			CharacterDoll doll = GameManager.Instance.enemyDoll[i];
+			Portrait p = enemyPortrait[i];
+			p.image.sprite = doll.chaInfo.portrait;
+			p.hpBar.Initialize();
+			p.doll = doll;
+			doll.portrait = p;
 		}
 	}
 

@@ -12,10 +12,10 @@ public class DollController : MonoBehaviour
 	private static readonly float MAX_DISTANCE		= Board.BOARD_WIDTH * 5f;
 	private static readonly float PREVIEW_Z			= -2f;
 	// CancleControl
+	// private static readonly Color32 CANCELBG_OFF = new Color32(255, 255, 255, 100);
+	// private static readonly Color32 CANCELBG_ON = new Color32(255, 255, 255, 200);
 	// private static readonly float PREVIEW_CANCEL_Y	= 370f;
 	private static readonly float PREVIEW_CANCELDIS = 128f * 0.5f;
-	private static readonly Color32 CANCELBG_OFF	= new Color32(255, 255, 255, 100);
-	private static readonly Color32 CANCELBG_ON		= new Color32(255, 255, 255, 200);
 	private static DollController _instance;
 	public static DollController Instance
 	{
@@ -29,7 +29,8 @@ public class DollController : MonoBehaviour
 			return _instance;
 		}
 	}
-	public static readonly float ONE_GRID_FORCE = 1280f;
+	public static readonly float ONE_GRID_FORCE		= 1280f;
+	public static readonly float ONE_GRID_VELOCITY	= 2.5f;
 
 	public bool attacking = false;
 	public int attackType = 0;
@@ -94,6 +95,7 @@ public class DollController : MonoBehaviour
 						u.SetDollControlAimPos(firstTouchedScrn);
 						u.SetDollControlAimActive(true);
 						touchStarted = true;
+						cancelAct = false;
 					}
 					if (touchStarted)
 					{
@@ -121,6 +123,7 @@ public class DollController : MonoBehaviour
 					u.SetDollControlAimPos(firstTouchedScrn);
 					u.SetDollControlAimActive(true);
 					touchStarted = true;
+					cancelAct = false;
 				}
 				if (touchStarted)
 				{
@@ -169,6 +172,15 @@ public class DollController : MonoBehaviour
 	private void UpdatePreview(float _touchDis)
 	{
 		CharacterDoll selectedDoll = g.selectedDoll;
+		
+		if (cancelAct)
+		{
+			lineRenderer[PREVIEW_INCOMING].gameObject.SetActive(false);
+			lineRenderer[PREVIEW_REFLECT].gameObject.SetActive(false);
+			lineRenderer[PREVIEW_TARGETGO].gameObject.SetActive(false);
+			lineRenderer[PREVIEW_CIRCLE].gameObject.SetActive(false);
+			return;
+        }
 
 		float bw = Board.BOARD_WIDTH;
 		float power = _touchDis * 2f;

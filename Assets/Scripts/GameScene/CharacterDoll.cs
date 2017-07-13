@@ -7,14 +7,16 @@ public class CharacterDoll : MonoBehaviour
 	public Vector2 center;
 	public Faction faction;
 	public Character chaInfo;
+	public Portrait portrait;
+	public bool dead = false;
 
 	private Rigidbody2D rb;
 	private CircleCollider2D col;
-	private int curHp = 100;
-	private int maxHp = 100;
-	private int attackPower = 30;
-	private float pushPower = 5.0f;
-	private float defensePower = 3.0f;
+	private int curHp = 100;			// 현재 체력
+	private int maxHp = 100;			// 최대 체력
+	private float attackPower = 30.0f;	// 공격력
+	private float pushPower = 5.0f;		// 파워
+	private float defensePower = 3.0f;  // 맷집
 
 
 
@@ -72,16 +74,23 @@ public class CharacterDoll : MonoBehaviour
 
 	public void OnCollisionEnter2D(Collision2D col)
 	{
+		GameManager g = GameManager.Instance;
+
 		Vector3 posStart = this.transform.position;
 		Vector3 n = rb.velocity.normalized;
 		Vector3 posEnd = posStart + n;
 		this.transform.rotation = Quaternion.Euler(0, 0, -Mathf.Atan2(posEnd.x - posStart.x, posEnd.y - posStart.y) * Mathf.Rad2Deg);
-
+		
 		if (col.gameObject.layer == LayerMask.NameToLayer("Doll") &&
-			GameManager.Instance.attacker == this)
+			g.attacker == this)
 		{
-			Vector2 minVelocity = col.contacts[0].point.normalized * DollController.ONE_GRID_FORCE * 2f;
-			col.rigidbody.AddForce(minVelocity);
+			CharacterDoll hit = col.gameObject.GetComponent<CharacterDoll>();
+            col.rigidbody.velocity = CalculateVelocity(this, hit);
+			hit.TakeDamage(this);
+			g.victim = hit;
+			g.attacker = null;
+
+			// col.rigidbody.velocity = FixVelocityToMinimum(col.rigidbody.velocity);
 		}
 	}
 
@@ -90,5 +99,46 @@ public class CharacterDoll : MonoBehaviour
 		if (rb.velocity == Vector2.zero)
 			return true;
 		return false;
+	}
+
+	private Vector2 FixVelocityToMinimum(Vector2 _vel)
+	{
+		if (_vel.magnitude < DollController.ONE_GRID_VELOCITY)
+		{
+			Vector2 v = _vel.normalized * DollController.ONE_GRID_VELOCITY * 1.5f;
+			return v;
+		}
+		return _vel;
+	}
+
+	private Vector2 CalculateVelocity(CharacterDoll _atk, CharacterDoll _hit)
+	{
+		float push = Mathf.Clamp(_atk.pushPower - _hit.defensePower, 1.5f, 10f);
+		Vector2 hitVel = _hit.rb.velocity;
+		Vector2 v = hitVel.normalized * DollController.ONE_GRID_VELOCITY * push;
+		return v;
+	}
+
+	private int TakeDamage(CharacterDoll _atk)
+	{
+		int damage = (int)(_atk.attackPower - this.defensePower);
+		curHp -= damage;
+
+		if (curHp <= 0)
+		{
+			Die();
+			return damage;
+		}
+
+		portrait.UpdateHpBar((float)curHp / maxHp);
+		return damage;
+	}
+
+	private void Die()
+	{
+		portrait.SetDeadPortrait();
+		portrait.UpdateHpBar(0f);
+		dead = true;
+        this.gameObject.SetActive(false);
 	}
 }

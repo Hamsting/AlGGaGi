@@ -167,4 +167,14 @@ public class PlaceMode : MonoBehaviour
 		doll.gameObject.SetActive(true);
 		remainPlace.RemoveAt(rand);
 	}
+
+	// Temporary!!!
+	public void DebugPlace()
+	{
+		for (; g.turnCount < 9;)
+		{
+			RandomPlace(g.myTurn, order);
+			ContinuePlaceMode();
+		}
+	}
 }

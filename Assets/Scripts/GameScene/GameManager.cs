@@ -38,7 +38,9 @@ public class GameManager : MonoBehaviour
 	public bool gameStopped = false;
 	[HideInInspector]
 	public CharacterDoll attacker;
-
+	[HideInInspector]
+	public CharacterDoll victim;
+		
 	public GameObject characterBoard;
 
 	private Board board;
@@ -76,7 +78,7 @@ public class GameManager : MonoBehaviour
 		place = PlaceMode.Instance;
 		place.StartPlaceMode();
 
-		u.ShowCharacter();
+		u.ShowCharacters();
 	}
 
 	void Update()
@@ -101,6 +103,9 @@ public class GameManager : MonoBehaviour
 		if (Input.GetKeyDown(KeyCode.T))
 			NextTurn();
 		// Temporary!!!
+		if (Input.GetKeyDown(KeyCode.R))
+			place.DebugPlace();
+		// Temporary!!!
 		if (!myTurn && timer <= 38f && !gameStopped)
 		{
 			int randIndex = Random.Range(0, 5);
@@ -110,6 +115,7 @@ public class GameManager : MonoBehaviour
 			Rigidbody2D rb = ed.GetComponent<Rigidbody2D>();
 			ed.transform.rotation = Quaternion.Euler(0f, 0f, randAngle);
 			rb.AddForce(ed.transform.up * (randPower * 1280f));
+			attacker = ed;
 			NextTurn();
 		}
 	}
@@ -201,6 +207,7 @@ public class GameManager : MonoBehaviour
 			DeselectDoll();
 		if (u.actSelect.opened)
 			u.CloseActSelect();
+		u.SetDollControlAimActive(false);
 		/*
 		 * CancelControl
 		if (u.cancelControlOpened)
@@ -233,10 +240,11 @@ public class GameManager : MonoBehaviour
 			yield return null;
 		}
 
+		yield return new WaitForSeconds(0.25f);
+
 		myTurn = !myTurn;
 		++turnCount;
 		timer = 40f;
-		attacker = null;
 		gameStopped = false;
 		yield return null;
 	}
