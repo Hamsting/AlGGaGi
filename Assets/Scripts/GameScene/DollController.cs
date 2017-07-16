@@ -43,7 +43,7 @@ public class DollController : MonoBehaviour
 	private float previewMaterialSpeed = 0.01f;
 	private bool cancelAct = false;
 	private GameManager g;
-	private UIManager u;
+	private GameUIManager u;
 
 
 
@@ -64,7 +64,7 @@ public class DollController : MonoBehaviour
 	public void Initialize()
 	{
 		g = GameManager.Instance;
-		u = UIManager.Instance;
+		u = GameUIManager.Instance;
 
 		lineRenderer = this.GetComponentsInChildren<LineRenderer>();
 		lineRenderer[PREVIEW_INCOMING].gameObject.SetActive(false);

@@ -40,12 +40,14 @@ public class GameManager : MonoBehaviour
 	public CharacterDoll attacker;
 	[HideInInspector]
 	public CharacterDoll victim;
+	[HideInInspector]
+	public bool gameover = false;
 		
 	public GameObject characterBoard;
 
 	private Board board;
 	private PlaceMode place;
-	private UIManager u;
+	private GameUIManager u;
 
 
 
@@ -72,7 +74,7 @@ public class GameManager : MonoBehaviour
 
         DollController.Instance.Initialize();
 
-		u = UIManager.Instance;
+		u = GameUIManager.Instance;
 		u.Initialize();
 
 		place = PlaceMode.Instance;
@@ -106,6 +108,14 @@ public class GameManager : MonoBehaviour
 		if (Input.GetKeyDown(KeyCode.R))
 			place.DebugPlace();
 		// Temporary!!!
+		if (Input.GetKeyDown(KeyCode.W))
+			for (int i = 0; i < 4; ++i)
+				enemyDoll[i].TakeDamage(99999);
+		// Temporary!!!
+		if (Input.GetKeyDown(KeyCode.E))
+			for (int i = 0; i < 5; ++i)
+				playerDoll[i].TakeDamage(99999);
+		// Temporary!!! : AI
 		if (!myTurn && timer <= 38f && !gameStopped)
 		{
 			int randIndex = Random.Range(0, 5);
@@ -225,27 +235,82 @@ public class GameManager : MonoBehaviour
 
 		bool stopped = false;
 		int count = dolls.Count;
+		float chkTimer = 0f;
         while (!stopped)
 		{
 			for (int i = 0; i <= count; ++i)
 			{
 				if (i == count)
 				{
-					stopped = true;
+					chkTimer += Time.deltaTime;
 					break;
 				}
 				else if (!dolls[i].IsStopped())
+				{
+					chkTimer = 0f;
 					break;
+				}
             }
+			if (chkTimer >= 0.25f)
+				break;
 			yield return null;
 		}
 
-		yield return new WaitForSeconds(0.25f);
+		if (!CheckGameOver())
+		{
+			myTurn = !myTurn;
+			++turnCount;
+			timer = 40f;
+			gameStopped = false;
+			if (myTurn)
+				u.ShowMyTurnMessage();
+			yield return null;
+		}
+	}
 
-		myTurn = !myTurn;
-		++turnCount;
-		timer = 40f;
-		gameStopped = false;
-		yield return null;
+	private bool CheckGameOver()
+	{
+		bool allDead = true;
+		for (int i = 0; i < 5; ++i)
+		{
+			if (!playerDoll[i].dead)
+			{
+				allDead = false;
+				break;
+			}
+		}
+		if (allDead)
+		{
+			GameOver(false);
+			return true;
+		}
+
+		allDead = true;
+		for (int i = 0; i < 5; ++i)
+		{
+			if (!enemyDoll[i].dead)
+			{
+				allDead = false;
+				break;
+			}
+		}
+		if (allDead)
+		{
+			GameOver(true);
+			return true;
+		}
+		return false;
+	}
+
+	private void GameOver(bool _win)
+	{
+		gameover = true;
+		gameStopped = true;
+		u.ShowResult(_win, 999);
+	}
+
+	public void GoMainScene()
+	{
+		SceneManager.Instance.LoadMainScene();
 	}
 }

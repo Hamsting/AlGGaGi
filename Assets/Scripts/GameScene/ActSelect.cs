@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class ActSelect : MonoBehaviour
 {
-	public static readonly float MARGIN_X = 175f;
+	public static readonly float MARGIN_X = 150f;
 
 	public Button attack;
 	public Button skill;

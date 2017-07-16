@@ -47,6 +47,7 @@ public class MapManager : MonoBehaviour
 
 	void Update()
 	{
+/*
 #if UNITY_ANDROID && !UNITY_EDITOR
 		if (Input.touchCount > 0)
 		{
@@ -114,6 +115,7 @@ public class MapManager : MonoBehaviour
 		else
 			cameraZooming = false;
 #endif
+*/
 	}
 
 	private void MoveCamera(Vector3 _touchPos)

@@ -170,10 +170,7 @@ public class CorpsManager : MonoBehaviour
 			yield return null;
 		}
 		if (!hold)
-		{
 			top.SetActive(false);
-			bot.SetActive(false);
-		}
 		yield return null;
 	}
 }

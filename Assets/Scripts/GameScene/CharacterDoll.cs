@@ -85,12 +85,13 @@ public class CharacterDoll : MonoBehaviour
 			g.attacker == this)
 		{
 			CharacterDoll hit = col.gameObject.GetComponent<CharacterDoll>();
-            col.rigidbody.velocity = CalculateVelocity(this, hit);
-			hit.TakeDamage(this);
-			g.victim = hit;
-			g.attacker = null;
-
-			// col.rigidbody.velocity = FixVelocityToMinimum(col.rigidbody.velocity);
+			if (hit.faction.isPlayer != this.faction.isPlayer)
+			{
+				col.rigidbody.velocity = CalculateVelocity(this, hit);
+				hit.TakeDamage(this);
+				g.victim = hit;
+				g.attacker = null;
+			}
 		}
 	}
 
@@ -132,6 +133,19 @@ public class CharacterDoll : MonoBehaviour
 
 		portrait.UpdateHpBar((float)curHp / maxHp);
 		return damage;
+	}
+
+	public void TakeDamage(int _fixedDamage)
+	{
+		curHp -= _fixedDamage;
+
+		if (curHp <= 0)
+		{
+			Die();
+			return;
+		}
+
+		portrait.UpdateHpBar((float)curHp / maxHp);
 	}
 
 	private void Die()

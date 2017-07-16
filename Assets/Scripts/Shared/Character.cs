@@ -6,6 +6,7 @@ using UnityEngine;
 public class Character
 {
 	public int id = 0000;
+	public string name = "";
 	public int hp = 100;
 	public int attackPower = 30;
 	public float pushPower = 5.0f;

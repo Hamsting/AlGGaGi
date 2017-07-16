@@ -19,7 +19,7 @@ public class PlaceMode : MonoBehaviour
 	}
 
 	private GameManager g;
-	private UIManager u;
+	private GameUIManager u;
 	private int order = 0;
 	private Vector2 lastAim;
 	private int aimIndex = 0;
@@ -44,7 +44,7 @@ public class PlaceMode : MonoBehaviour
 	public void StartPlaceMode()
 	{
 		g = GameManager.Instance;
-		u = UIManager.Instance;
+		u = GameUIManager.Instance;
 
 		g.placeMode = true;
 		g.timer = 40f;
