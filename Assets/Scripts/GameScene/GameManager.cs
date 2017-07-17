@@ -114,11 +114,11 @@ public class GameManager : MonoBehaviour
 		// Temporary!!!
 		if (Input.GetKeyDown(KeyCode.W))
 			for (int i = 0; i < 4; ++i)
-				enemyDoll[i].TakeDamage(99999);
+				enemyDoll[i].TakeDamage(enemyDoll[i].chaInfo.hp);
 		// Temporary!!!
 		if (Input.GetKeyDown(KeyCode.E))
 			for (int i = 0; i < 5; ++i)
-				playerDoll[i].TakeDamage(99999);
+				playerDoll[i].TakeDamage(playerDoll[i].chaInfo.hp);
 		// Temporary!!! : AI
 		if (!myTurn && timer <= 38f && !gameStopped)
 		{
@@ -176,7 +176,9 @@ public class GameManager : MonoBehaviour
 		Vector2 hidePos = new Vector2(-999f, -999f);
 		for (int i = 0; i < 5; ++i)
 		{
-			Character cha = PlayerData.Instance.characters[i];
+			Character c = PlayerData.Instance.characters[i];
+            int lv = PlayerData.Instance.chaLevel[c.id - 1];
+			Character cha = c.CalculateLevel(lv);
 			int id = cha.id;
 			Faction faction = new Faction(true, i);
 			CharacterDoll doll = CreateCharacterDoll(id);
@@ -207,11 +209,22 @@ public class GameManager : MonoBehaviour
 	{
 		// Temporary!!!
 		List<Character> chas = new List<Character>();
+
+		for (int i = 0; i < 5; ++i)
+		{
+			Character c = PlayerData.Instance.characters[i];
+            int lv = (int)(PlayerData.Instance.chaLevel[c.id - 1] * 1.1f);
+			int rand = Random.Range(1, 17);
+			Character cha = CharacterDB.Instance.GetCharacter(rand).CalculateLevel(lv);
+			chas.Add(cha);
+		}
+		/*
 		chas.Add(CharacterDB.Instance.GetCharacter(0008));
 		chas.Add(CharacterDB.Instance.GetCharacter(0010));
 		chas.Add(CharacterDB.Instance.GetCharacter(0009));
 		chas.Add(CharacterDB.Instance.GetCharacter(0006));
 		chas.Add(CharacterDB.Instance.GetCharacter(0015));
+		*/
 		return chas;
 	}
 
@@ -312,6 +325,7 @@ public class GameManager : MonoBehaviour
 		gameover = true;
 		gameStopped = true;
 		PlayerData.Instance.gold += gainGold;
+		PlayerData.Instance.SaveData();
 		u.ShowResult(_win, gainGold);
 	}
 

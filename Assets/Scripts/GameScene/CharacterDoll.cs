@@ -125,6 +125,7 @@ public class CharacterDoll : MonoBehaviour
 		int damage = (int)(_atk.attackPower - this.defensePower);
 		curHp -= damage;
 		GameManager.Instance.gainGold += damage;
+		GameUIManager.Instance.ShowDamage(damage, Camera.main.WorldToScreenPoint(this.transform.position));
 
 		if (curHp <= 0)
 		{

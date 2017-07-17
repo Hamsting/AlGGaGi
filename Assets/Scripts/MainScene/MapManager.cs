@@ -78,6 +78,8 @@ public class MapManager : MonoBehaviour
 		{
 			stageBtns[i].anchoredPosition = d.stagePos[i];
 			Image img = stageBtns[i].gameObject.GetComponent<Image>();
+			Button btn = stageBtns[i].gameObject.GetComponent<Button>();
+			btn.interactable = true;
 			if (i == 5)
 			{
 				if (cleared == 6)
@@ -85,7 +87,10 @@ public class MapManager : MonoBehaviour
 				else if (cleared == 5)
 					img.sprite = bossStageBtnSpr[2];
 				else
+				{ 
 					img.sprite = bossStageBtnSpr[0];
+					btn.interactable = false;
+				}
 			}
 			else
 			{
@@ -94,7 +99,10 @@ public class MapManager : MonoBehaviour
 				else if (i == cleared)
 					img.sprite = stageBtnSpr[2 + i];
 				else
+				{
 					img.sprite = stageBtnSpr[0];
+					btn.interactable = false;
+				}
 			}
 		}
 

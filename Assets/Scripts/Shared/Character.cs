@@ -16,4 +16,24 @@ public class Character
 	public CharacterDoll dollPrefab;
 	public Sprite portrait;
 	public Sprite ingame;
+
+	[HideInInspector]
+	public bool originalData = true;
+
+
+
+	public Character CalculateLevel(int _lv)
+	{
+		Character c;
+		if (!originalData)
+			c = (Character)CharacterDB.Instance.GetCharacter(id).MemberwiseClone();
+		else
+			c = (Character)this.MemberwiseClone();
+
+		c.hp += hpUpgrade * (_lv - 1);
+		c.attackPower += attackUpgrade * (_lv - 1);
+		c.originalData = false;
+
+		return c;
+	}
 }

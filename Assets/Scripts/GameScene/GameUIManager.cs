@@ -34,6 +34,10 @@ public class GameUIManager : MonoBehaviour
 	public Animator resultWindow;
 	public Text resultGold;
 	public RectTransform turnArrow;
+	public Text damage;
+	public Text criticalDamage;
+	public Animator damageAnim;
+	public Animator criticalAnim;
 
 	/*
 	 * CancelControl
@@ -44,7 +48,8 @@ public class GameUIManager : MonoBehaviour
 	*/
 
 	private RectTransform rtActSelect;
-
+	private RectTransform rtDamage;
+	private RectTransform rtCritical;
 
 
 	void Awake()
@@ -58,6 +63,8 @@ public class GameUIManager : MonoBehaviour
 		timerBar[1].Initialize();
 		actSelect.Initialize();
 		rtActSelect = actSelect.GetComponent<RectTransform>();
+		rtDamage = damageAnim.gameObject.GetComponent<RectTransform>();
+		rtCritical = criticalAnim.gameObject.GetComponent<RectTransform>();
 		resolutionScale = new Vector2(Screen.width / 1080f, Screen.height / 1920f);
     }
 
@@ -194,6 +201,26 @@ public class GameUIManager : MonoBehaviour
 			turnArrow.localRotation = Quaternion.Euler(0f, 0f, 0f);
 		else
 			turnArrow.localRotation = Quaternion.Euler(0f, 0f, 180f);
+	}
+
+	public void ShowDamage(int _damage, Vector2 _spos)
+	{
+		damage.text = _damage.ToString();
+		Vector2 pos = _spos;
+		pos.x /= resolutionScale.x;
+		pos.y /= resolutionScale.y;
+		rtDamage.anchoredPosition = pos;
+		damageAnim.Play("Show");
+	}
+
+	public void ShowCriticalDamage(int _damage, Vector2 _spos)
+	{
+		criticalDamage.text = _damage.ToString();
+		Vector2 pos = _spos;
+		pos.x /= resolutionScale.x;
+		pos.y /= resolutionScale.y;
+		rtCritical.anchoredPosition = pos;
+		criticalAnim.Play("Critical");
 	}
 
 	/*
