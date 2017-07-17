@@ -18,6 +18,8 @@ public class PlaceMode : MonoBehaviour
 		}
 	}
 
+	public AudioClip placeFx;
+
 	private GameManager g;
 	private GameUIManager u;
 	private int order = 0;
@@ -107,6 +109,7 @@ public class PlaceMode : MonoBehaviour
 					u.placeModeAim.rectTransform.localPosition = new Vector2(-9999f, -9999f);
 					remainPlace.RemoveAt(aimIndex);
 					lastAim = Vector2.zero;
+					SoundManager.Instance.PlayFX(placeFx);
 					ContinuePlaceMode();
 				}
 				else
@@ -156,6 +159,7 @@ public class PlaceMode : MonoBehaviour
 		g.turnCount = 0;
 		g.myTurn = !g.myTurn;
 		u.HidePlaceMode();
+		u.SetTurnArrow(g.myTurn);
 	}
 
 	private void RandomPlace(bool _isPlayer, int _order)
@@ -164,8 +168,11 @@ public class PlaceMode : MonoBehaviour
 		Vector2 v = remainPlace[rand];
 		CharacterDoll doll = g.GetDoll(_isPlayer, _order);
 		doll.transform.localPosition = Board.Instance.GetGridPosition((int)v.x, (int)v.y);
+		if (!_isPlayer)
+			doll.transform.localRotation = Quaternion.Euler(0f, 0f, 180f);
 		doll.gameObject.SetActive(true);
 		remainPlace.RemoveAt(rand);
+		SoundManager.Instance.PlayFX(placeFx);
 	}
 
 	// Temporary!!!

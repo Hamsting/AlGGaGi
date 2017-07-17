@@ -1,6 +1,6 @@
 fileFormatVersion: 2
 guid: e0658ef43b02fb0498feb86623ea1001
-timeCreated: 1500120449
+timeCreated: 1500207153
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
@@ -21,6 +21,8 @@ TextureImporter:
     21300028: ui_atlas_14
     21300030: ui_atlas_15
     21300032: ui_atlas_16
+    21300034: gs_ui_atlas_0
+    21300036: gs_ui_atlas_1
   serializedVersion: 4
   mipmaps:
     mipMapMode: 0
@@ -311,7 +313,33 @@ TextureImporter:
         width: 512
         height: 239
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: gs_ui_atlas_0
+      rect:
+        serializedVersion: 2
+        x: 1080
+        y: 0
+        width: 159
+        height: 248
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: gs_ui_atlas_1
+      rect:
+        serializedVersion: 2
+        x: 1091
+        y: 248
+        width: 380
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0

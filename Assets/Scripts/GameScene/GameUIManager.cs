@@ -33,6 +33,7 @@ public class GameUIManager : MonoBehaviour
 	public Animator gameMessage;
 	public Animator resultWindow;
 	public TextMesh resultGold;
+	public RectTransform turnArrow;
 
 	/*
 	 * CancelControl
@@ -89,10 +90,16 @@ public class GameUIManager : MonoBehaviour
 			placeModeArrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 180f);
 			placeModeAim.gameObject.SetActive(false);
 		}
+		else
+		{
+			placeModeAim.sprite = playerPortrait[_order].doll.chaInfo.ingame;
+			placeModeAim.rectTransform.pivot = placeModeAim.sprite.pivot / 500f;
+        }
 		Vector2 arrowPos = rt.anchoredPosition + new Vector2(0f, 400f);
 		if (!_isPlayer)
 			arrowPos.y = 1920f - arrowPos.y;
 		placeModeArrow.rectTransform.localPosition = arrowPos;
+		SetTurnArrow(_isPlayer);
 	}
 
 	public void HidePlaceMode()
@@ -179,6 +186,14 @@ public class GameUIManager : MonoBehaviour
 
 		resultWindow.gameObject.SetActive(true);
 		resultWindow.Play("Open");
+	}
+
+	public void SetTurnArrow(bool _myTurn)
+	{
+		if (_myTurn)
+			turnArrow.localRotation = Quaternion.Euler(0f, 0f, 0f);
+		else
+			turnArrow.localRotation = Quaternion.Euler(0f, 0f, 180f);
 	}
 
 	/*

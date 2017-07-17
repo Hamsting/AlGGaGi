@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CorpsManager : MonoBehaviour
 {
@@ -24,6 +25,10 @@ public class CorpsManager : MonoBehaviour
 	public GameObject top;
 	public GameObject bot;
 	public GameObject bar;
+	public Sprite barOpenedSpr;
+	public Sprite barClosedSpr;
+	public GameObject barArrowOpen;
+	public GameObject barArrowClose;
 
 	private bool hold = false;
 	private bool opened = false;
@@ -32,12 +37,12 @@ public class CorpsManager : MonoBehaviour
 	private RectTransform barRt;
 	private Coroutine barCoroutine;
 	private float firstY;
+	private Image barImage;
 
 
 	void Awake()
 	{
 		_instance = this;
-		DontDestroyOnLoad(this);
 	}
 
 	void Start()
@@ -45,7 +50,8 @@ public class CorpsManager : MonoBehaviour
 		botAnimator = bot.GetComponent<Animator>();
 		topRt = top.GetComponent<RectTransform>();
 		barRt = bar.GetComponent<RectTransform>();
-	}
+		barImage = bar.GetComponent<Image>();
+    }
 
 	void Update()
 	{
@@ -113,6 +119,9 @@ public class CorpsManager : MonoBehaviour
 		if (barCoroutine != null)
 			StopCoroutine(barCoroutine);
 		barCoroutine = StartCoroutine(OpenTop());
+		barImage.sprite = barOpenedSpr;
+		barArrowOpen.SetActive(false);
+		barArrowClose.SetActive(true);
 	}
 
 	private void Close()
@@ -120,6 +129,9 @@ public class CorpsManager : MonoBehaviour
 		if (barCoroutine != null)
 			StopCoroutine(barCoroutine);
 		barCoroutine = StartCoroutine(CloseTop());
+		barImage.sprite = barClosedSpr;
+		barArrowOpen.SetActive(true);
+		barArrowClose.SetActive(false);
 	}
 
 	private IEnumerator OpenTop()

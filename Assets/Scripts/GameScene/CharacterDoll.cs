@@ -124,6 +124,7 @@ public class CharacterDoll : MonoBehaviour
 	{
 		int damage = (int)(_atk.attackPower - this.defensePower);
 		curHp -= damage;
+		GameManager.Instance.gainGold += damage;
 
 		if (curHp <= 0)
 		{
@@ -138,6 +139,7 @@ public class CharacterDoll : MonoBehaviour
 	public void TakeDamage(int _fixedDamage)
 	{
 		curHp -= _fixedDamage;
+		GameManager.Instance.gainGold += _fixedDamage;
 
 		if (curHp <= 0)
 		{

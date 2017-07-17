@@ -42,8 +42,11 @@ public class GameManager : MonoBehaviour
 	public CharacterDoll victim;
 	[HideInInspector]
 	public bool gameover = false;
+	[HideInInspector]
+	public int gainGold = 0;
 		
 	public GameObject characterBoard;
+	public AudioClip gameBgm;
 
 	private Board board;
 	private PlaceMode place;
@@ -76,11 +79,12 @@ public class GameManager : MonoBehaviour
 
 		u = GameUIManager.Instance;
 		u.Initialize();
+		u.ShowCharacters();
 
 		place = PlaceMode.Instance;
 		place.StartPlaceMode();
 
-		u.ShowCharacters();
+		SoundManager.Instance.PlayBGM(gameBgm);
 	}
 
 	void Update()
@@ -203,11 +207,11 @@ public class GameManager : MonoBehaviour
 	{
 		// Temporary!!!
 		List<Character> chas = new List<Character>();
-		chas.Add(CharacterDB.Instance.GetCharacter(0000));
-		chas.Add(CharacterDB.Instance.GetCharacter(0000));
-		chas.Add(CharacterDB.Instance.GetCharacter(0000));
-		chas.Add(CharacterDB.Instance.GetCharacter(0000));
-		chas.Add(CharacterDB.Instance.GetCharacter(0000));
+		chas.Add(CharacterDB.Instance.GetCharacter(0008));
+		chas.Add(CharacterDB.Instance.GetCharacter(0010));
+		chas.Add(CharacterDB.Instance.GetCharacter(0009));
+		chas.Add(CharacterDB.Instance.GetCharacter(0006));
+		chas.Add(CharacterDB.Instance.GetCharacter(0015));
 		return chas;
 	}
 
@@ -264,6 +268,7 @@ public class GameManager : MonoBehaviour
 			gameStopped = false;
 			if (myTurn)
 				u.ShowMyTurnMessage();
+			u.SetTurnArrow(myTurn);
 			yield return null;
 		}
 	}
@@ -306,7 +311,8 @@ public class GameManager : MonoBehaviour
 	{
 		gameover = true;
 		gameStopped = true;
-		u.ShowResult(_win, 999);
+		PlayerData.Instance.gold += gainGold;
+		u.ShowResult(_win, gainGold);
 	}
 
 	public void GoMainScene()
