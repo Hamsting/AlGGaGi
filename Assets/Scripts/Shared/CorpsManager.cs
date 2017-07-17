@@ -29,6 +29,7 @@ public class CorpsManager : MonoBehaviour
 	public Sprite barClosedSpr;
 	public GameObject barArrowOpen;
 	public GameObject barArrowClose;
+	public GameObject chaSlotPrefab;
 
 	private bool hold = false;
 	private bool opened = false;
@@ -57,7 +58,7 @@ public class CorpsManager : MonoBehaviour
 	{
 		if (hold)
 		{
-			MapManager.Instance.focused = false;
+			// MapManager.Instance.focused = false;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
 			float curY = Input.GetTouch(0).position.y;
@@ -65,7 +66,7 @@ public class CorpsManager : MonoBehaviour
 			float curY = Input.mousePosition.y;
 #endif
 
-			float diff = curY - firstY;
+			float diff = (curY - firstY) * 1280f / Screen.height;
 			Vector2 pos = barRt.anchoredPosition;
 			pos.y = Mathf.Clamp(diff - BAR_HALFHEIGHT, BAR_LIMIT_Y, -BAR_HALFHEIGHT);
 			if (opened)
@@ -86,7 +87,7 @@ public class CorpsManager : MonoBehaviour
 		}
 		if (opened)
 		{
-			MapManager.Instance.focused = false;
+			// MapManager.Instance.focused = false;
 		}
 	}
 
@@ -184,5 +185,19 @@ public class CorpsManager : MonoBehaviour
 		if (!hold)
 			top.SetActive(false);
 		yield return null;
+	}
+
+	private void LoadCharacters()
+	{
+		int max = CharacterDB.Instance.characters.Count;
+		for (int i = 1; i < max; ++i)
+		{
+			GameObject obj = Instantiate<GameObject>(chaSlotPrefab);
+			CharacterSlot slot = obj.GetComponent<CharacterSlot>();
+
+			Character c = CharacterDB.Instance.characters[i];
+			slot.portrait.sprite = c.portrait;
+			
+		}
 	}
 }

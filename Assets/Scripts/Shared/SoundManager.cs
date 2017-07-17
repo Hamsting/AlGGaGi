@@ -26,8 +26,9 @@ public class SoundManager : MonoBehaviour
 	{
 		_instance = this;
 		audios = this.GetComponents<AudioSource>();
+		audios[0].loop = true;
 		DontDestroyOnLoad(this);
-    }
+	}
 
 	void Start()
 	{

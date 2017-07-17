@@ -18,9 +18,14 @@ public class PlayerData : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	/// 출전한 캐릭터들.
+	/// </summary>
 	public List<Character> characters;
 	public int gold = 0;
 	public int rankScore = 300;
+	public int[] clearedStage;
+	public int[] chaLevel;
 
 
 
@@ -28,6 +33,8 @@ public class PlayerData : MonoBehaviour
 	{
 		_instance = this;
 		DontDestroyOnLoad(this);
+		clearedStage = new int[MapManager.MAX_DIVIDE];
+		chaLevel = new int[CharacterDB.Instance.characters.Count];
 		DebugInitialize();
 	}
 
@@ -49,6 +56,8 @@ public class PlayerData : MonoBehaviour
 	{
 		PlayerPrefs.SetInt("Gold", gold);
 		PlayerPrefs.SetInt("RankScore", rankScore);
+		for (int i = 0; i < MapManager.MAX_DIVIDE; ++i)
+			PlayerPrefs.SetInt("Stage" + (i + 1).ToString(), clearedStage[i]);
 
 		PlayerPrefs.Save();
 	}
@@ -57,5 +66,7 @@ public class PlayerData : MonoBehaviour
 	{
 		gold = PlayerPrefs.GetInt("Gold", 0);
 		rankScore = PlayerPrefs.GetInt("RankScore", 300);
+		for (int i = 0; i < MapManager.MAX_DIVIDE; ++i)
+			clearedStage[i] = PlayerPrefs.GetInt("Stage" + (i + 1).ToString(), 0);
 	}
 }

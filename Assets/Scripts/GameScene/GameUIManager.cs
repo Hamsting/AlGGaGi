@@ -28,11 +28,11 @@ public class GameUIManager : MonoBehaviour
 	public Image placeModeArrow;
 	public Image placeModeAim;
 	public Bar[] timerBar;
-	public TextMesh timer;
+	public Text timer;
 	public ActSelect actSelect;
 	public Animator gameMessage;
 	public Animator resultWindow;
-	public TextMesh resultGold;
+	public Text resultGold;
 	public RectTransform turnArrow;
 
 	/*
