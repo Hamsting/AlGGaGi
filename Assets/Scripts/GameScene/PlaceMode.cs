@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using SimpleJSON;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -59,7 +60,21 @@ public class PlaceMode : MonoBehaviour
 				remainPlace.Add(new Vector2(c, r));
 
 		u.ShowPlaceMode(g.myTurn, order);
-	}
+
+        PSocketManager.Instance.socket.On("custom-data", (string str) =>
+        {
+            var json = JSON.Parse(str);
+            matchPlace = new Vector2(10 - json[1]["x"], 10 - json[1]["y"]);
+            isMatchPlaced = true;
+        });
+
+        PSocketManager.Instance.socket.Emit("test", "[\"hello\", 4]", (string str)=>
+        {
+            
+        });
+    }
+
+    
 
 	public void ContinuePlaceMode()
 	{
@@ -110,7 +125,9 @@ public class PlaceMode : MonoBehaviour
 					remainPlace.RemoveAt(aimIndex);
 					lastAim = Vector2.zero;
 					SoundManager.Instance.PlayFX(placeFx);
-					ContinuePlaceMode();
+                    PSocketManager.Instance.socket.Emit("custom-data",
+    "[\"" + PSocketManager.Instance.user._id + "\", {\"x\":" + (int)aim.x + ", \"y\":" + (int)aim.y + "}]");
+                    ContinuePlaceMode();
 				}
 				else
 				{
@@ -144,15 +161,25 @@ public class PlaceMode : MonoBehaviour
 		}
 		else
 		{
+            /*
 			if (g.timer <= 39f)
 			{
 				RandomPlace(false, order);
 				ContinuePlaceMode();
 			}
+            */
+            if (isMatchPlaced)
+            {
+                isMatchPlaced = false;
+                Place(matchPlace);
+            }
 		}
 	}
+    
+    private bool isMatchPlaced = false;
+    private Vector2 matchPlace = new Vector2();
 
-	public void EndPlaceMode()
+    public void EndPlaceMode()
 	{
 		g.placeMode = false;
 		g.timer = 40f;
@@ -173,15 +200,52 @@ public class PlaceMode : MonoBehaviour
 		doll.gameObject.SetActive(true);
 		remainPlace.RemoveAt(rand);
 		SoundManager.Instance.PlayFX(placeFx);
+        PSocketManager.Instance.socket.Emit("custom-data",
+            "[\"" + PSocketManager.Instance.user._id + "\", {\"x\":" + (int)v.x + ", \"y\":" + (int)v.y + "}]");
 	}
 
-	// Temporary!!!
-	public void DebugPlace()
+
+    private void Place(Vector2 v)
+    {
+        int removeIndex = -1;
+        for (int i = 0; i < remainPlace.Count; ++i)
+        {
+            if (remainPlace[i] == v)
+            {
+                removeIndex = i;
+                break;
+            }
+        }
+
+        if (removeIndex == -1) Debug.LogError("removeIndex is -1!");
+
+        var isPlayer = g.myTurn;
+        CharacterDoll doll = g.GetDoll(g.myTurn, order);
+        doll.transform.localPosition = Board.Instance.GetGridPosition((int)v.x, (int)v.y);
+        if (!isPlayer)
+            doll.transform.localRotation = Quaternion.Euler(0f, 0f, 180f);
+        doll.gameObject.SetActive(true);
+        remainPlace.RemoveAt(removeIndex);
+        SoundManager.Instance.PlayFX(placeFx);
+    }
+
+
+    // Temporary!!!
+    public void DebugPlace()
 	{
+        /*
 		for (; g.turnCount < 9;)
 		{
 			RandomPlace(g.myTurn, order);
 			ContinuePlaceMode();
 		}
+        */
 	}
+}
+
+[SerializeField]
+public class CustomData
+{
+    public string id; //from
+    public string value;
 }

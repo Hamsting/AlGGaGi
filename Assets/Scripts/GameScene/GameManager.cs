@@ -61,9 +61,9 @@ public class GameManager : MonoBehaviour
 
 	void Start()
 	{
-		// Temporary!!!
-		myTurn = (Random.Range(0, 2) == 1) ? true : false;
-
+        // Temporary!!!
+        //myTurn = (Random.Range(0, 2) == 1) ? true : false;
+        myTurn = PSocketManager.Instance.isStartTurn;
 		Input.multiTouchEnabled = false;
 
 		dolls = new List<CharacterDoll>();
