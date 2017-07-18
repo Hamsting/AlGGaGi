@@ -44,7 +44,9 @@ public class GameManager : MonoBehaviour
 	public bool gameover = false;
 	[HideInInspector]
 	public int gainGold = 0;
-		
+	[HideInInspector]
+	public int unlockTarget = 0;
+
 	public GameObject characterBoard;
 	public AudioClip gameBgm;
 
@@ -192,39 +194,44 @@ public class GameManager : MonoBehaviour
 		List<Character> ec = LoadEnemyCharacters();
 		for (int i = 0; i < 5; ++i)
 		{
+			bool dark = true;
 			Character cha = ec[i];
 			int id = cha.id;
+			if (id == unlockTarget)
+				dark = false;
 			Faction faction = new Faction(false, i);
 			CharacterDoll doll = CreateCharacterDoll(id);
 			doll.transform.localPosition = hidePos;
 			doll.faction = faction;
 			doll.Initialize(cha);
 			dolls.Add(doll);
-			enemyDoll.Add(doll);
+			if (dark)
+				doll.MakeDarkSprite();
+			else
+				doll.MakeRedSprite();
+            enemyDoll.Add(doll);
 			doll.gameObject.SetActive(false);
 		}
 	}
 
 	private List<Character> LoadEnemyCharacters()
 	{
-		// Temporary!!!
 		List<Character> chas = new List<Character>();
 
 		for (int i = 0; i < 5; ++i)
 		{
 			Character c = PlayerData.Instance.characters[i];
             int lv = (int)(PlayerData.Instance.chaLevel[c.id - 1] * 1.1f);
-			int rand = Random.Range(1, 17);
-			Character cha = CharacterDB.Instance.GetCharacter(rand).CalculateLevel(lv);
+			int eid = PlayerData.Instance.enemys[i];
+			if (eid < 0)
+			{
+				eid *= -1;
+				unlockTarget = eid;
+			}
+			Character cha = CharacterDB.Instance.GetCharacter(eid).CalculateLevel(lv);
 			chas.Add(cha);
 		}
-		/*
-		chas.Add(CharacterDB.Instance.GetCharacter(0008));
-		chas.Add(CharacterDB.Instance.GetCharacter(0010));
-		chas.Add(CharacterDB.Instance.GetCharacter(0009));
-		chas.Add(CharacterDB.Instance.GetCharacter(0006));
-		chas.Add(CharacterDB.Instance.GetCharacter(0015));
-		*/
+
 		return chas;
 	}
 
@@ -279,6 +286,8 @@ public class GameManager : MonoBehaviour
 			++turnCount;
 			timer = 40f;
 			gameStopped = false;
+			for (int i = 0; i < dolls.Count; ++i)
+				dolls[i].receivedDamage = 0;
 			if (myTurn)
 				u.ShowMyTurnMessage();
 			u.SetTurnArrow(myTurn);
@@ -324,9 +333,29 @@ public class GameManager : MonoBehaviour
 	{
 		gameover = true;
 		gameStopped = true;
-		PlayerData.Instance.gold += gainGold;
+		if (_win)
+		{
+			int divide = PlayerData.Instance.selectedDivide - 1;
+			int stage = PlayerData.Instance.selectedStage;
+			if (stage == PlayerData.Instance.clearedStage[divide] + 1)
+				PlayerData.Instance.clearedStage[divide] += 1;
+
+			if (unlockTarget > 0)
+			{
+				if (PlayerData.Instance.chaLevel[unlockTarget - 1] == 0)
+					PlayerData.Instance.chaLevel[unlockTarget - 1] = 1;
+				else
+					unlockTarget = 0;
+			}
+        }
+		int g = (int)(gainGold * 0.1f);
+		if (g < 1)
+			g = 1;
+		if (PlayerData.Instance.selectedStage == 6 && _win)
+			g *= 2;
+		PlayerData.Instance.gold += g;
 		PlayerData.Instance.SaveData();
-		u.ShowResult(_win, gainGold);
+		u.ShowResult(_win, g);
 	}
 
 	public void GoMainScene()

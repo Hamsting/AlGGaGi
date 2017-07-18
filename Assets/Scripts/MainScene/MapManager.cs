@@ -196,11 +196,16 @@ public class MapManager : MonoBehaviour
 
 	public void OnStartGame()
 	{
-
+		int[] enemys = selectedDivide.GetStageEnemys(selectedStage);
+		PlayerData.Instance.enemys = enemys;
+		PlayerData.Instance.selectedDivide = selectedDivide.divideNum;
+		PlayerData.Instance.selectedStage = selectedStage;
+		SceneManager.Instance.LoadGameScene();
 	}
 
 	public void OnSelectStage(int _num)
 	{
+		selectedStage = _num;
 		selectedEffect.anchoredPosition = selectedDivide.stagePos[_num - 1];
 		if (_num == 6)
 		{

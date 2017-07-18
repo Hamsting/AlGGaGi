@@ -9,6 +9,7 @@ public class CharacterDoll : MonoBehaviour
 	public Character chaInfo;
 	public Portrait portrait;
 	public bool dead = false;
+	public int receivedDamage = 0;
 
 	private Rigidbody2D rb;
 	private CircleCollider2D col;
@@ -17,6 +18,7 @@ public class CharacterDoll : MonoBehaviour
 	private float attackPower = 30.0f;	// 공격력
 	private float pushPower = 5.0f;		// 파워
 	private float defensePower = 3.0f;  // 맷집
+	private SpriteRenderer spr;
 
 
 
@@ -42,6 +44,13 @@ public class CharacterDoll : MonoBehaviour
 			return;
 		}
 		center = this.transform.TransformPoint(col.offset);
+
+		spr = this.GetComponentInChildren<SpriteRenderer>();
+		if (spr == null)
+		{
+			Debug.LogError(this.ToString() + " : SpriteRenderer is null.");
+			return;
+		}
 
 		if (chaInfo == null)
 		{
@@ -88,10 +97,18 @@ public class CharacterDoll : MonoBehaviour
 			if (hit.faction.isPlayer != this.faction.isPlayer)
 			{
 				col.rigidbody.velocity = CalculateVelocity(this, hit);
-				hit.TakeDamage(this);
+				hit.receivedDamage = hit.TakeDamage(this);
 				g.victim = hit;
 				g.attacker = null;
 			}
+		}
+		else if (col.gameObject.layer == LayerMask.NameToLayer("Wall") && receivedDamage > 0)
+		{
+			int wallDmg = (int)(receivedDamage * 0.2f);
+			if (wallDmg < 1)
+				wallDmg = 1;
+            TakeDamage(wallDmg);
+			receivedDamage = 0;
 		}
 	}
 
@@ -123,8 +140,13 @@ public class CharacterDoll : MonoBehaviour
 	private int TakeDamage(CharacterDoll _atk)
 	{
 		int damage = (int)(_atk.attackPower - this.defensePower);
+        if (damage < 1)
+			damage = 1;
 		curHp -= damage;
-		GameManager.Instance.gainGold += damage;
+		float power = damage / (maxHp * 0.5f) * 0.25f;
+		GameUIManager.Instance.ShakeCamera(power);
+		if (!this.faction.isPlayer)
+			GameManager.Instance.gainGold += damage;
 		GameUIManager.Instance.ShowDamage(damage, Camera.main.WorldToScreenPoint(this.transform.position));
 
 		if (curHp <= 0)
@@ -140,7 +162,9 @@ public class CharacterDoll : MonoBehaviour
 	public void TakeDamage(int _fixedDamage)
 	{
 		curHp -= _fixedDamage;
-		GameManager.Instance.gainGold += _fixedDamage;
+		if (!this.faction.isPlayer)
+			GameManager.Instance.gainGold += _fixedDamage;
+		GameUIManager.Instance.ShowCriticalDamage(_fixedDamage, Camera.main.WorldToScreenPoint(this.transform.position));
 
 		if (curHp <= 0)
 		{
@@ -157,5 +181,15 @@ public class CharacterDoll : MonoBehaviour
 		portrait.UpdateHpBar(0f);
 		dead = true;
         this.gameObject.SetActive(false);
+	}
+
+	public void MakeDarkSprite()
+	{
+		spr.color = new Color(0.8f, 0.3f, 0.3f, 1f);
+	}
+
+	public void MakeRedSprite()
+	{
+		spr.color = new Color(1f, 0.65f, 0.65f, 1f);
 	}
 }

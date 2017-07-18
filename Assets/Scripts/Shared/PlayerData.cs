@@ -31,6 +31,13 @@ public class PlayerData : MonoBehaviour
 	public int[] clearedStage;
 	public int[] chaLevel;
 
+	[HideInInspector]
+	public int[] enemys;
+	[HideInInspector]
+	public int selectedDivide = 0;
+	[HideInInspector]
+	public int selectedStage = 0;
+
 
 
 	void Awake()
@@ -117,6 +124,7 @@ public class PlayerData : MonoBehaviour
 		chaLevel[0] = 1;
 		chaLevel[5] = 1;
 		chaLevel[8] = 1;
+		chaLevel[10] = 1;
 		chaLevel[13] = 1;
 		chaLevel[14] = 1;
 	}

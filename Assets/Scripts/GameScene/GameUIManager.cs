@@ -38,6 +38,8 @@ public class GameUIManager : MonoBehaviour
 	public Text criticalDamage;
 	public Animator damageAnim;
 	public Animator criticalAnim;
+	public Text unlockName;
+	public Image unlockPortrait;
 
 	/*
 	 * CancelControl
@@ -50,6 +52,7 @@ public class GameUIManager : MonoBehaviour
 	private RectTransform rtActSelect;
 	private RectTransform rtDamage;
 	private RectTransform rtCritical;
+	private Coroutine shakeCoroutine;
 
 
 	void Awake()
@@ -181,6 +184,13 @@ public class GameUIManager : MonoBehaviour
 	{
 		StartCoroutine(AnimateResult(_win));
 		resultGold.text = _gold.ToString();
+		if (GameManager.Instance.unlockTarget > 0)
+		{
+			unlockPortrait.rectTransform.parent.gameObject.SetActive(true);
+			Character c = CharacterDB.Instance.GetCharacter(GameManager.Instance.unlockTarget);
+			unlockPortrait.sprite = c.portrait;
+			unlockName.text = c.name;
+		}
     }
 
 	private IEnumerator AnimateResult(bool _win)
@@ -222,6 +232,43 @@ public class GameUIManager : MonoBehaviour
 		rtCritical.anchoredPosition = pos;
 		criticalAnim.Play("Critical");
 	}
+
+	public void ShakeCamera(float _power)
+	{
+		if (shakeCoroutine != null)
+			StopCoroutine(shakeCoroutine);
+		shakeCoroutine = StartCoroutine(ShakeCameraAnimate(_power));
+	}
+
+	private IEnumerator ShakeCameraAnimate(float _power)
+	{
+		float term = 0.05f;
+		float destTime = 0.55f;
+		
+		float curPower = _power;
+		float timer = 0f;
+		Vector3 pos = Vector3.zero;
+		Camera cam = Camera.main;
+		pos.z = -10f;
+		float fix = 1f;
+		while (true)
+		{
+			if (timer >= destTime)
+				break;
+
+			float rand = Random.Range(0f, 1f);
+			pos.x = rand * curPower;
+			pos.y = (1f - rand) * curPower;
+			cam.transform.position = pos;
+			timer += term;
+			curPower = _power * (1f - (timer / destTime)) * fix;
+			fix *= -1f;
+			yield return new WaitForSeconds(term);
+		}
+		pos.x = 0f;
+		pos.y = 0f;
+		cam.transform.position = pos;
+    }
 
 	/*
 	 * CancelControl
