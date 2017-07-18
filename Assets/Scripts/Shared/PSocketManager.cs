@@ -8,7 +8,7 @@ using SimpleJSON;
 public class PSocketManager : MonoBehaviour
 {
 
-    private const string SERVER_URL = "http://localhost:3144";
+    private const string SERVER_URL = "http://pacific.applepi.kr";
 
     [HideInInspector]
     public Socket socket;
@@ -119,6 +119,7 @@ public class PSocketManager : MonoBehaviour
     {
         socket.Emit("login", id, str =>
         {
+
             var result = PSocketManager.parseArrayJson<WrapData<User>>(str);
 
             if (result.code == 200)
