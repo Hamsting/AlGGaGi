@@ -78,19 +78,54 @@ public class DollController : MonoBehaviour
 	{
 		if (g.IsSelectingDoll() && !g.gameStopped && attackType != 0)
 		{
-#if UNITY_ANDROID && !UNITY_EDITOR
-			if (Input.touchCount > 0)
+			if (attackType == 1 || attackType == 3)
 			{
-				Touch t = Input.GetTouch(0);
-				if (touchStarted && t.phase == TouchPhase.Ended)
-					ShotDoll();
-				else
+#if UNITY_ANDROID && !UNITY_EDITOR
+				if (Input.touchCount > 0)
 				{
-					if (t.phase == TouchPhase.Began)
+					Touch t = Input.GetTouch(0);
+					if (touchStarted && t.phase == TouchPhase.Ended)
+					{
+						if (attackType == 3)
+							UseSkillTargeting();
+						else
+							ShotDoll();
+					}
+					else
+					{
+						if (t.phase == TouchPhase.Began)
+						{
+							// CancleControl
+							// u.OpenCancelControl();
+							firstTouchedScrn = t.position;
+							firstTouched = Camera.main.ScreenToWorldPoint(firstTouchedScrn);
+							u.SetDollControlAimPos(firstTouchedScrn);
+							u.SetDollControlAimActive(true);
+							touchStarted = true;
+							cancelAct = false;
+						}
+						if (touchStarted)
+						{
+							Vector2 touchPos = Camera.main.ScreenToWorldPoint(t.position);
+							float angle = Mathf.Atan2(touchPos.y - firstTouched.y, touchPos.x - firstTouched.x) * Mathf.Rad2Deg + 90.0f;
+							float dis = Mathf.Clamp(Vector2.Distance(touchPos, firstTouched), 0f, MAX_DISTANCE);
+							Quaternion q = Quaternion.Euler(0f, 0f, angle);
+							g.selectedDoll.transform.rotation = q;
+
+							UpdatePreview(dis);
+						}
+					}
+				}
+				else
+					DisableAllPreview();
+#else
+				if (Input.GetMouseButton(0))
+				{
+					if (Input.GetMouseButtonDown(0))
 					{
 						// CancleControl
 						// u.OpenCancelControl();
-						firstTouchedScrn = t.position;
+						firstTouchedScrn = Input.mousePosition;
 						firstTouched = Camera.main.ScreenToWorldPoint(firstTouchedScrn);
 						u.SetDollControlAimPos(firstTouchedScrn);
 						u.SetDollControlAimActive(true);
@@ -99,7 +134,7 @@ public class DollController : MonoBehaviour
 					}
 					if (touchStarted)
 					{
-						Vector2 touchPos = Camera.main.ScreenToWorldPoint(t.position);
+						Vector2 touchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 						float angle = Mathf.Atan2(touchPos.y - firstTouched.y, touchPos.x - firstTouched.x) * Mathf.Rad2Deg + 90.0f;
 						float dis = Mathf.Clamp(Vector2.Distance(touchPos, firstTouched), 0f, MAX_DISTANCE);
 						Quaternion q = Quaternion.Euler(0f, 0f, angle);
@@ -108,65 +143,49 @@ public class DollController : MonoBehaviour
 						UpdatePreview(dis);
 					}
 				}
+				else if (touchStarted && Input.GetMouseButtonUp(0))
+				{
+					if (attackType == 3)
+						UseSkillTargeting();
+					else
+						ShotDoll();
+				}
+				else
+					DisableAllPreview();
+#endif
+			}
+			else if (attackType == 2)
+			{
+				UseSkill();
 			}
 			else
 				DisableAllPreview();
-#else
-			if (Input.GetMouseButton(0))
+
+			if (attacking && (attackType == 1 || attackType == 3))
 			{
-				if (Input.GetMouseButtonDown(0))
+				Vector2 touchPos = Vector2.zero;
+#if UNITY_ANDROID && !UNITY_EDITOR
+				touchPos = Input.GetTouch(0).position;
+#else
+				touchPos = Input.mousePosition;
+#endif
+				float dis = Vector2.Distance(firstTouchedScrn, touchPos);
+				if (dis <= PREVIEW_CANCELDIS * u.resolutionScale.y)
 				{
 					// CancleControl
-					// u.OpenCancelControl();
-					firstTouchedScrn = Input.mousePosition;
-					firstTouched = Camera.main.ScreenToWorldPoint(firstTouchedScrn);
-					u.SetDollControlAimPos(firstTouchedScrn);
-					u.SetDollControlAimActive(true);
-					touchStarted = true;
+					// u.cancelControlBG.color = CANCELBG_ON;
+					cancelAct = true;
+				}
+				else
+				{
+					// CancleControl
+					// u.cancelControlBG.color = CANCELBG_OFF;
 					cancelAct = false;
 				}
-				if (touchStarted)
-				{
-					Vector2 touchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-					float angle = Mathf.Atan2(touchPos.y - firstTouched.y, touchPos.x - firstTouched.x) * Mathf.Rad2Deg + 90.0f;
-					float dis = Mathf.Clamp(Vector2.Distance(touchPos, firstTouched), 0f, MAX_DISTANCE);
-					Quaternion q = Quaternion.Euler(0f, 0f, angle);
-					g.selectedDoll.transform.rotation = q;
-
-					UpdatePreview(dis);
-				}
 			}
-			else if (touchStarted && Input.GetMouseButtonUp(0))
-				ShotDoll();
-			else
-				DisableAllPreview();
-#endif
 		}
 		else
 			DisableAllPreview();
-		
-		if (attacking)
-		{
-			Vector2 touchPos = Vector2.zero;
-#if UNITY_ANDROID && !UNITY_EDITOR
-			touchPos = Input.GetTouch(0).position;
-#else
-			touchPos = Input.mousePosition;
-#endif
-			float dis = Vector2.Distance(firstTouchedScrn, touchPos);
-			if (dis <= PREVIEW_CANCELDIS * u.resolutionScale.y)
-			{
-				// CancleControl
-				// u.cancelControlBG.color = CANCELBG_ON;
-				cancelAct = true;
-			}
-			else
-			{
-				// CancleControl
-				// u.cancelControlBG.color = CANCELBG_OFF;
-				cancelAct = false;
-			}
-		}
 	}
 
 	private void UpdatePreview(float _touchDis)
@@ -278,6 +297,8 @@ public class DollController : MonoBehaviour
 		}
 		CharacterDoll selectedDoll = g.selectedDoll;
 		Rigidbody2D rb = selectedDoll.GetComponent<Rigidbody2D>();
+		selectedDoll.defMode = false;
+		selectedDoll.rb.isKinematic = false;
 		rb.AddForce(selectedDoll.transform.up * (powerScale * ONE_GRID_FORCE));
 		g.attacker = selectedDoll;
 		g.NextTurn();
@@ -301,5 +322,35 @@ public class DollController : MonoBehaviour
 		}
 		lineRenderer[PREVIEW_CIRCLE].gameObject.SetActive(true);
 		lineRenderer[PREVIEW_CIRCLE].gameObject.transform.position = _pos;
+	}
+
+	private void UseSkill()
+	{
+		GameObject prefab = g.selectedDoll.chaInfo.skillPrefab.gameObject;
+        GameObject obj = Instantiate<GameObject>(prefab, g.skillBoard.transform);
+		Skill skill = obj.GetComponent<Skill>();
+		skill.owner = g.selectedDoll;
+		skill.Use();
+		g.selectedDoll.skillCoolDown = skill.coolDown;
+		g.attacker = g.selectedDoll;
+		g.skills.Add(skill);
+		g.NextTurn();
+	}
+
+	private void UseSkillTargeting()
+	{
+		float power = powerScale;
+		float force = powerScale * ONE_GRID_FORCE;
+
+		GameObject prefab = g.selectedDoll.chaInfo.skillPrefab.gameObject;
+		GameObject obj = Instantiate<GameObject>(prefab, g.skillBoard.transform);
+		Skill skill = obj.GetComponent<Skill>();
+		skill.owner = g.selectedDoll;
+		skill.receivedForce = force;
+		skill.Use();
+		g.selectedDoll.skillCoolDown = skill.coolDown;
+        g.attacker = g.selectedDoll;
+		g.skills.Add(skill);
+		g.NextTurn();
 	}
 }

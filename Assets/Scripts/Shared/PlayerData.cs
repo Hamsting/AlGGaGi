@@ -31,7 +31,7 @@ public class PlayerData : MonoBehaviour
 	public int[] clearedStage;
 	public int[] chaLevel;
 
-	[HideInInspector]
+	// [HideInInspector]
 	public int[] enemys;
 	[HideInInspector]
 	public int selectedDivide = 0;

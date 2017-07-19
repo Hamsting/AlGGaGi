@@ -4,17 +4,30 @@ using UnityEngine;
 
 public class CharacterDoll : MonoBehaviour
 {
+	[HideInInspector]
 	public Vector2 center;
+	[HideInInspector]
 	public Faction faction;
+	[HideInInspector]
 	public Character chaInfo;
+	[HideInInspector]
 	public Portrait portrait;
+	[HideInInspector]
 	public bool dead = false;
+	[HideInInspector]
 	public int receivedDamage = 0;
+	[HideInInspector]
+	public int skillCoolDown = 0;
+	[HideInInspector]
+	public int moveLock = 0;            // 디버프 : 이동제한
+	[HideInInspector]
+	public bool defMode = false;		// 버프 : 방어태세
 
-	private Rigidbody2D rb;
-	private CircleCollider2D col;
-	private int curHp = 100;			// 현재 체력
-	private int maxHp = 100;			// 최대 체력
+	public int maxHp = 100;				// 최대 체력
+	public int curHp = 100;				// 현재 체력
+	public Rigidbody2D rb;
+	public CircleCollider2D col;
+
 	private float attackPower = 30.0f;	// 공격력
 	private float pushPower = 5.0f;		// 파워
 	private float defensePower = 3.0f;  // 맷집
@@ -67,6 +80,8 @@ public class CharacterDoll : MonoBehaviour
 	public void Tick()
 	{
 		center = this.transform.TransformPoint(col.offset);
+
+		rb.isKinematic = defMode;
 	}
 
 	public void OnMouseUp()
@@ -96,7 +111,10 @@ public class CharacterDoll : MonoBehaviour
 			CharacterDoll hit = col.gameObject.GetComponent<CharacterDoll>();
 			if (hit.faction.isPlayer != this.faction.isPlayer)
 			{
-				col.rigidbody.velocity = CalculateVelocity(this, hit);
+				if (hit.defMode)
+					col.rigidbody.velocity = Vector2.zero;
+				else
+					col.rigidbody.velocity = CalculateVelocity(this, hit);
 				hit.receivedDamage = hit.TakeDamage(this);
 				g.victim = hit;
 				g.attacker = null;
@@ -140,6 +158,8 @@ public class CharacterDoll : MonoBehaviour
 	private int TakeDamage(CharacterDoll _atk)
 	{
 		int damage = (int)(_atk.attackPower - this.defensePower);
+		if (defMode)
+			damage = (int)(damage * 0.2f);
         if (damage < 1)
 			damage = 1;
 		curHp -= damage;
@@ -149,30 +169,36 @@ public class CharacterDoll : MonoBehaviour
 			GameManager.Instance.gainGold += damage;
 		GameUIManager.Instance.ShowDamage(damage, Camera.main.WorldToScreenPoint(this.transform.position));
 
+		SoundManager.Instance.PlayFX(GameManager.Instance.hitFx);
+		portrait.UpdateHpBar((float)curHp / maxHp);
+
 		if (curHp <= 0)
 		{
 			Die();
 			return damage;
 		}
 
-		portrait.UpdateHpBar((float)curHp / maxHp);
 		return damage;
 	}
 
 	public void TakeDamage(int _fixedDamage)
 	{
-		curHp -= _fixedDamage;
+		if (defMode)
+			curHp -= (int)(_fixedDamage * 0.2f);
+		else
+			curHp -= _fixedDamage;
 		if (!this.faction.isPlayer)
 			GameManager.Instance.gainGold += _fixedDamage;
 		GameUIManager.Instance.ShowCriticalDamage(_fixedDamage, Camera.main.WorldToScreenPoint(this.transform.position));
+
+		SoundManager.Instance.PlayFX(GameManager.Instance.hitFx);
+		portrait.UpdateHpBar((float)curHp / maxHp);
 
 		if (curHp <= 0)
 		{
 			Die();
 			return;
 		}
-
-		portrait.UpdateHpBar((float)curHp / maxHp);
 	}
 
 	private void Die()
@@ -191,5 +217,21 @@ public class CharacterDoll : MonoBehaviour
 	public void MakeRedSprite()
 	{
 		spr.color = new Color(1f, 0.65f, 0.65f, 1f);
+	}
+
+	public void OnTurnEnd()
+	{
+		if (skillCoolDown > 0 && GameManager.Instance.myTurn)
+			--skillCoolDown;
+	}
+
+	public int Heal(int _heal)
+	{
+		curHp += _heal;
+		if (curHp > maxHp)
+			curHp = maxHp;
+
+		portrait.UpdateHpBar((float)curHp / maxHp);
+		return _heal;
 	}
 }

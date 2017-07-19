@@ -126,9 +126,10 @@ public class PlaceMode : MonoBehaviour
 					}
 					if (canPlace)
 					{
+						float res = ((float)Screen.width / Screen.height) / (9f / 16f);
 						Vector3 worldPos = b.transform.TransformPoint(nearPos);
 						Vector2 scrnPos = Camera.main.WorldToScreenPoint(worldPos) - new Vector3(Screen.width * 0.5f, 0f);
-						scrnPos.x /= u.resolutionScale.x;
+						scrnPos.x /= u.resolutionScale.x / res;
 						scrnPos.y /= u.resolutionScale.y;
 						u.placeModeAim.rectTransform.localPosition = scrnPos;
 						lastAim = aim;

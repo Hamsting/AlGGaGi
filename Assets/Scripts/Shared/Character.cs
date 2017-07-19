@@ -7,6 +7,8 @@ public class Character
 {
 	public int id = 0000;
 	public string name = "";
+	[TextArea]
+	public string desc = "";
 	public int hp = 100;
 	public float attackPower = 30;
 	public int hpUpgrade = 1;
@@ -16,6 +18,7 @@ public class Character
 	public CharacterDoll dollPrefab;
 	public Sprite portrait;
 	public Sprite ingame;
+	public Skill skillPrefab;
 
 	[HideInInspector]
 	public bool originalData = true;

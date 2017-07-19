@@ -26,6 +26,8 @@ public class GameManager : MonoBehaviour
 	public List<CharacterDoll> enemyDoll;
 	[HideInInspector]
 	public CharacterDoll selectedDoll;
+	[HideInInspector]
+	public List<Skill> skills;
 	//[HideInInspector]
 	public float timer = 40.0f;
 	[HideInInspector]
@@ -48,7 +50,9 @@ public class GameManager : MonoBehaviour
 	public int unlockTarget = 0;
 
 	public GameObject characterBoard;
+	public GameObject skillBoard;
 	public AudioClip gameBgm;
+	public AudioClip hitFx;
 
 	private Board board;
 	private PlaceMode place;
@@ -71,6 +75,7 @@ public class GameManager : MonoBehaviour
 		dolls = new List<CharacterDoll>();
 		playerDoll = new List<CharacterDoll>();
 		enemyDoll = new List<CharacterDoll>();
+		skills = new List<Skill>();
 
 		board = Board.Instance;
 		board.Initialize();
@@ -93,6 +98,8 @@ public class GameManager : MonoBehaviour
 	{
 		for (int i = 0; i < dolls.Count; ++i)
 			dolls[i].Tick();
+		for (int i = 0; i < skills.Count; ++i)
+			skills[i].Tick();
 		if (placeMode)
 			place.UpdatePlaceMode();
 		else
@@ -123,18 +130,50 @@ public class GameManager : MonoBehaviour
 				playerDoll[i].TakeDamage(playerDoll[i].chaInfo.hp);
 		// Temporary!!! : AI
 		if (!myTurn && timer <= 38f && !gameStopped)
-		{
-			int randIndex = Random.Range(0, 5);
-			float randPower = Random.Range(0.5f, 10f);
-			float randAngle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-			CharacterDoll ed = enemyDoll[randIndex];
-			Rigidbody2D rb = ed.GetComponent<Rigidbody2D>();
-			ed.transform.rotation = Quaternion.Euler(0f, 0f, randAngle);
-			rb.AddForce(ed.transform.up * (randPower * 1280f));
-			attacker = ed;
-			NextTurn();
-		}
+			AIThink();
 	}
+
+	private void AIThink()
+	{
+		int randIndex = Random.Range(0, 5);
+		if (enemyDoll[randIndex].dead)
+		{
+			for (int i = 0; i < 5; ++i)
+			{
+				if (!enemyDoll[i].dead)
+				{
+					randIndex = i;
+					break;
+				}
+			}
+		}
+		float randPower = Random.Range(5.5f, 10f);
+		CharacterDoll ed = enemyDoll[randIndex];
+
+		randIndex = Random.Range(0, 5);
+		if (playerDoll[randIndex].dead)
+		{
+			for (int i = 0; i < 5; ++i)
+			{
+				if (!playerDoll[i].dead)
+				{
+					randIndex = i;
+					break;
+				}
+			}
+		}
+		CharacterDoll tar = playerDoll[randIndex];
+
+		float randAngle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+		Rigidbody2D rb = ed.GetComponent<Rigidbody2D>();
+	
+		ed.transform.rotation = CalculateLookRotation(ed, tar);
+
+		rb.AddForce(ed.transform.up * (randPower * 1280f));
+		attacker = ed;
+		NextTurn();
+	}
+
 
 	public void SelectDoll(CharacterDoll _doll)
 	{
@@ -248,10 +287,10 @@ public class GameManager : MonoBehaviour
 			u.CloseCancelControl();
 		*/
 
-		StartCoroutine(CheckAllDollStop());
+		StartCoroutine(WaitAndNextTurn());
 	}
 
-	private IEnumerator CheckAllDollStop()
+	private IEnumerator WaitAndNextTurn()
 	{
 		gameStopped = true;
 		timer = 0f;
@@ -260,7 +299,11 @@ public class GameManager : MonoBehaviour
 		bool stopped = false;
 		int count = dolls.Count;
 		float chkTimer = 0f;
-        while (!stopped)
+
+		Coroutine waitSkill = StartCoroutine(WaitSkills());
+		yield return waitSkill;
+
+		while (!stopped)
 		{
 			for (int i = 0; i <= count; ++i)
 			{
@@ -279,6 +322,14 @@ public class GameManager : MonoBehaviour
 				break;
 			yield return null;
 		}
+
+		for (int i = 0; i < dolls.Count; ++i)
+			dolls[i].OnTurnEnd();
+		for (int i = 0; i < skills.Count; ++i)
+			skills[i].OnTurnEnd();
+
+		waitSkill = StartCoroutine(WaitSkills());
+		yield return waitSkill;
 
 		if (!CheckGameOver())
 		{
@@ -358,8 +409,41 @@ public class GameManager : MonoBehaviour
 		u.ShowResult(_win, g);
 	}
 
+	private IEnumerator WaitSkills()
+	{
+		bool end = false;
+		while (true)
+		{
+			end = true;
+			for (int i = 0; i < skills.Count; ++i)
+			{
+				if (skills[i].active)
+				{
+					end = false;
+					break;
+				}
+
+			}
+			if (end)
+				break;
+			yield return true;
+		}
+	}
+
 	public void GoMainScene()
 	{
 		SceneManager.Instance.LoadMainScene();
+	}
+
+	public static Quaternion CalculateLookRotation(Vector3 _posStart, Vector3 _posEnd)
+	{
+		return Quaternion.Euler(0, 0, -Mathf.Atan2(_posEnd.x - _posStart.x, _posEnd.y - _posStart.y) * Mathf.Rad2Deg);
+	}
+
+	public static Quaternion CalculateLookRotation(CharacterDoll _me, CharacterDoll _tar)
+	{
+		Vector3 posStart = _me.transform.position;
+		Vector3 posEnd = _tar.transform.position;
+		return Quaternion.Euler(0, 0, -Mathf.Atan2(posEnd.x - posStart.x, posEnd.y - posStart.y) * Mathf.Rad2Deg);
 	}
 }

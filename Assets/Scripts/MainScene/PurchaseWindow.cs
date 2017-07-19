@@ -58,7 +58,7 @@ public class PurchaseWindow : MonoBehaviour
 
 		portrait.sprite = _c.portrait;
 		chaName.text = _c.name;
-		desc.text = "";
+		desc.text = _c.desc;
 		attackPower.text = ((int)(_c.attackPower)).ToString();
 		hp.text = _c.hp.ToString();
 		pushPower.text = _c.pushPower.ToString();

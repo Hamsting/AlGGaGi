@@ -9,6 +9,8 @@ public class ActSelect : MonoBehaviour
 
 	public Button attack;
 	public Button skill;
+	public Image skillIcon;
+	public Text skillCoolDown;
 	public bool opened = false;
 
 	private RectTransform rtAttack;
@@ -27,6 +29,43 @@ public class ActSelect : MonoBehaviour
 	public void Tick()
 	{
 		
+	}
+
+	public void SetSkillIcon(Sprite _icon)
+	{
+		skillIcon.sprite = _icon;
+		EnableSkill();
+    }
+
+	public void EnableSkill()
+	{
+		skill.interactable = true;
+		skillIcon.enabled = true;
+		skillCoolDown.enabled = false;
+	}
+
+	public void EnableCoolDown(int _collDown)
+	{
+		skillCoolDown.enabled = true;
+		skillCoolDown.text = _collDown.ToString();
+		skill.interactable = false;
+    }
+
+	public void DisableSkill()
+	{
+		skill.interactable = false;
+		skillIcon.enabled = false;
+		skillCoolDown.enabled = false;
+	}
+
+	public void EnableAttack()
+	{
+		attack.interactable = true;
+	}
+
+	public void DisableAttack()
+	{
+		attack.interactable = false;
 	}
 
 	public void Open()
@@ -97,6 +136,8 @@ public class ActSelect : MonoBehaviour
 	public void OnSelectAttackType(int _type)
 	{
 		attackType = _type;
+		if (attackType == 2 && GameManager.Instance.selectedDoll.chaInfo.skillPrefab.targeting)
+			attackType = 3;
 		Close();
 	}
 }

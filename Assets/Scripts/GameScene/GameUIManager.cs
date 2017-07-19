@@ -34,12 +34,11 @@ public class GameUIManager : MonoBehaviour
 	public Animator resultWindow;
 	public Text resultGold;
 	public RectTransform turnArrow;
-	public Text damage;
-	public Text criticalDamage;
-	public Animator damageAnim;
-	public Animator criticalAnim;
 	public Text unlockName;
 	public Image unlockPortrait;
+	public GameObject damagePrefab;
+	public GameObject criticalPrefab;
+	public RectTransform indicateGroup;
 
 	/*
 	 * CancelControl
@@ -50,8 +49,6 @@ public class GameUIManager : MonoBehaviour
 	*/
 
 	private RectTransform rtActSelect;
-	private RectTransform rtDamage;
-	private RectTransform rtCritical;
 	private Coroutine shakeCoroutine;
 
 
@@ -66,8 +63,6 @@ public class GameUIManager : MonoBehaviour
 		timerBar[1].Initialize();
 		actSelect.Initialize();
 		rtActSelect = actSelect.GetComponent<RectTransform>();
-		rtDamage = damageAnim.gameObject.GetComponent<RectTransform>();
-		rtCritical = criticalAnim.gameObject.GetComponent<RectTransform>();
 		resolutionScale = new Vector2(Screen.width / 1080f, Screen.height / 1920f);
     }
 
@@ -149,6 +144,20 @@ public class GameUIManager : MonoBehaviour
 		rtActSelect.anchoredPosition = scrnPos;
 		actSelect.gameObject.SetActive(true);
 		actSelect.Open();
+		Skill skill = _doll.chaInfo.skillPrefab;
+		if (skill != null && !(_doll.moveLock > 0 && skill.targeting))
+		{
+			actSelect.SetSkillIcon(skill.icon);
+			if (_doll.skillCoolDown > 0)
+				actSelect.EnableCoolDown(_doll.skillCoolDown);
+		}
+		else
+			actSelect.DisableSkill();
+
+		if (_doll.moveLock > 0)
+			actSelect.DisableAttack();
+		else
+			actSelect.EnableAttack();
 	}
 
 	public void CloseActSelect()
@@ -184,7 +193,7 @@ public class GameUIManager : MonoBehaviour
 	{
 		StartCoroutine(AnimateResult(_win));
 		resultGold.text = _gold.ToString();
-		if (GameManager.Instance.unlockTarget > 0)
+		if (GameManager.Instance.unlockTarget > 0 && _win)
 		{
 			unlockPortrait.rectTransform.parent.gameObject.SetActive(true);
 			Character c = CharacterDB.Instance.GetCharacter(GameManager.Instance.unlockTarget);
@@ -215,22 +224,34 @@ public class GameUIManager : MonoBehaviour
 
 	public void ShowDamage(int _damage, Vector2 _spos)
 	{
+		GameObject obj = Instantiate(damagePrefab, indicateGroup);
+		RectTransform rt = obj.GetComponent<RectTransform>();
+		Animator anim = obj.GetComponent<Animator>();
+		Text damage = obj.GetComponentInChildren<Text>();
+
 		damage.text = _damage.ToString();
 		Vector2 pos = _spos;
 		pos.x /= resolutionScale.x;
 		pos.y /= resolutionScale.y;
-		rtDamage.anchoredPosition = pos;
-		damageAnim.Play("Show");
+		rt.anchoredPosition = pos;
+		anim.Play("Show");
+		Destroy(obj, 1.0f);
 	}
 
 	public void ShowCriticalDamage(int _damage, Vector2 _spos)
 	{
-		criticalDamage.text = _damage.ToString();
+		GameObject obj = Instantiate(criticalPrefab, indicateGroup);
+		RectTransform rt = obj.GetComponent<RectTransform>();
+		Animator anim = obj.GetComponent<Animator>();
+		Text damage = obj.GetComponentInChildren<Text>();
+
+		damage.text = _damage.ToString();
 		Vector2 pos = _spos;
 		pos.x /= resolutionScale.x;
 		pos.y /= resolutionScale.y;
-		rtCritical.anchoredPosition = pos;
-		criticalAnim.Play("Critical");
+		rt.anchoredPosition = pos;
+		anim.Play("Critical");
+		Destroy(obj, 1.0f);
 	}
 
 	public void ShakeCamera(float _power)

@@ -21,4 +21,9 @@ public class Portrait : MonoBehaviour
 	{
 		image.color = new Color32(165, 108, 108, 255);
 	}
+
+	public void SetNormalPortrait()
+	{
+		image.color = Color.white;
+	}
 }
